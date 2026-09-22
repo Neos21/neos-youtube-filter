@@ -45,7 +45,7 @@
     - パターンの入力契約 : パターンは空文字を拒否し、意味を変える前後空白の除去をしない。正規表現とフラグの組み合わせを検証し、不正値は 400 とする。正規表現の連続評価では `lastIndex` をリセットする。フラグの対応範囲は対象ブラウザでの検証時に確認し、実行環境で構築できないキャッシュ内パターンはスキップしてエラーを通知する
     - API 契約 : `/api/blocked-videos`・`/api/blocked-channels`・`/api/blocked-patterns`・`/api/subscribed-channels` に GET (一覧)・POST (登録)、各 `/:id` に GET・PATCH・DELETE を用意する。JSON のカラム名は DB と同じ snake_case とする。一覧は id 昇順の配列、取得・登録・更新は保存後のレコード、削除は true を `result` に格納する。新規作成は 201、既存登録・取得・更新・削除は 200。不正入力は 400、存在しない ID は 404、競合は 409、予期しない障害は 500 とし、エラーは `{ error: メッセージ }` とする
     - 更新契約 : PATCH の未指定は保持、NULL 許容項目への明示 NULL はクリアとする。識別子が両方空になる更新は拒否する。主キーの編集と未知の入力項目を拒否し、更新後の値の組み合わせを検証する
-    - 取得 API 契約 : `GET /api/filter-data` は `{ result: { blocked_videos: [...], blocked_channels: [...], blocked_patterns: [...], subscribed_channels: [...] } }` を返す。各配列は該当テーブルのレコードとし、取得失敗を空配列として扱わない
+    - 取得 API 契約 : `GET /api/filter-rules` は `{ result: { blocked_videos: [...], blocked_channels: [...], blocked_patterns: [...], subscribed_channels: [...] } }` を返す。各配列は該当テーブルのレコードとし、取得失敗を空配列として扱わない
     - キャッシュ契約 : 保存形式に版と取得日時を持ち、起動時は有効な形式のキャッシュで表示を開始して API から再取得する。対象ページへの遷移時も再取得し、登録成功時はメモリとキャッシュへ即時反映する。通信失敗では既存キャッシュを利用し、401 は再設定を案内する。初回取得失敗・破損時は条件なしで表示を維持し、再試行できるようにする。定期ポーリングは初期実装に含めない
     - 責務と State : Route は認証・入出力、Repository は単一テーブルの永続化、Service はチャンネル紐付けや4テーブルの Read Model、shared は型・Schema・共有処理を担当する。管理画面は認証を既存 Store、一覧・編集中入力・通信状態を必要な所有箇所で保持する。メインスクリプトは `window.__YTF__` 配下に初期化状態・条件・トグル・監視解除処理を保持する
     - 検証・引継ぎ : 今回は契約とタスクリストのみ変更し、実装・D1 操作は行わない。次は 02 の SQL 作成と開発者によるローカル適用。開発者から既存テーブル・保持すべき既存データともになしと確認済み
@@ -69,11 +69,14 @@
 
 ### 2. API
 
-- [ ] 04. 固定 Bearer トークン認証と API の CORS・認証境界を実装する
+- [x] 04. 固定 Bearer トークン認証と API の CORS・認証境界を実装する
     - 対象 : `server/routes/api/api.ts`、認証処理、`server/types/hono-bindings.ts`、`.dev.vars.example`、`server/routes/api/login/`、`shared/schemas/login-schema.ts`、管理画面のログイン・Store・API ヘルパー、認証関連文書
     - 01 の契約に沿って全 API を固定トークン認証に統一し、JWT 関連処理・設定を削除する。秘密値は環境変数から読む。配信する `/ytf.js` やリポジトリに固定トークンを埋め込まない
     - `www.youtube.com`・`m.youtube.com` からの Authorization 付きリクエストと OPTIONS を扱い、更新に PATCH を使う場合は現在の CORS 許可メソッドへ追加する
     - 完了条件 : トークンなし・不正・正常・サーバ設定不足の応答、認証前のプリフライト、管理画面のログイン経路を確認する。公開スクリプト取得と保護対象 API を区別する
+    - 完了記録 : API 共通 Middleware で `API_TOKEN` と Bearer トークンを照合し、CORS を認証より先に適用した。`POST /api/login` は `{ result: true }` を返す確認用 API とし、管理画面は入力した固定トークンを保存する。JWT 発行処理・旧 Binding・サンプルの JWT 認証を削除し、既存 Store の保存形式を更新して旧認証情報をクリアする
+    - 検証 : Lint・型チェックを含むビルド成功。Hono のリクエスト実行で未指定・不一致・正常トークン・設定不足・両 YouTube ドメインの OPTIONS とエラー応答の CORS を確認した。クライアントは模擬 LocalStorage・通信で旧情報の破棄、固定トークン保存・復元、Authorization 付与、401 時のログアウトを確認した
+    - 手動確認 : 開発者が `.dev.vars` に `API_TOKEN` を設定して開発サーバを再起動し、同じ値で画面ログインを確認する。実ブラウザでの操作と本番シークレット登録・デプロイは未実施。詳細文書の追加は後回しとし、既存の認証説明と設定例のみ更新した
 - [ ] 05. 非表示動画の Repository と CRUD API を実装する
     - 対象 : `server/repositories/`、`server/routes/api/`、`shared/` の契約
     - `blocked_videos` の一覧・追加・編集・削除を用意し、動画 ID の重複登録と存在しない ID の扱いを統一する

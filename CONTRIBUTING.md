@@ -92,6 +92,5 @@ $ wrangler d1 execute ytf --remote --command='SELECT * FROM 【テーブル名�
 - 本番シークレットの登録は開発者が手動で行い、AI エージェントは実行しない
 
 ```bash
-$ echo 'EXAMPLE_VALUE' | wrangler secret put ADMIN_PASSWORD   --name ytf
-$ echo 'EXAMPLE_VALUE' | wrangler secret put ADMIN_JWT_SECRET --name ytf
+$ echo 'EXAMPLE_VALUE' | wrangler secret put API_TOKEN --name ytf
 ```

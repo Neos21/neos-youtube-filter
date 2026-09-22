@@ -1,9 +1,6 @@
 import { isEmpty } from '../helpers/is-empty';
 import { normalizeYouTubeIdentifier } from '../services/normalize-youtube-identifier';
 
-/** 1行テキストを Trim する Preprocessor */
-export const preprocessOneLineString = (value: unknown): unknown => value == null ? '' : typeof value === 'string' ? value.trim() : value;
-
 /** 空の任意項目を `null` に変換する */
 export const normalizeNullable = (value: unknown): unknown => value == null || (typeof value === 'string' && isEmpty(value)) ? null : value;
 

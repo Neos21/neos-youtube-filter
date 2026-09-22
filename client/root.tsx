@@ -18,7 +18,7 @@ export function Layout({ children }: { children: ReactNode }): ReactElement {
   const isHydrated = useAdminStore(state => state.isHydrated);
   const token      = useAdminStore(state => state.token);
   
-  // JWT の有無でログイン済か否かをチェックし適宜リダイレクトする
+  // トークンの有無でログイン済か否かをチェックし適宜リダイレクトする
   useEffect((): void => {
     if(isHydrated !== true) return;  // LocalStorage から Store の復旧が済んでいない段階では何もしない
     
@@ -29,7 +29,7 @@ export function Layout({ children }: { children: ReactNode }): ReactElement {
       return;
     }
     if(!isAuthenticated && location.pathname !== '/') {  // 未ログインの場合に `/` 以外にいる場合は `/` に移動する
-      // JWT 有効期限切れ等の理由の場合は `index.tsx` にメッセージを表示するため、必要に応じて SessionStorage に情報を記録してから遷移する
+      // トークンの変更等の理由の場合は `index.tsx` にメッセージを表示するため、必要に応じて SessionStorage に情報を記録してから遷移する
       const redirectReason = sessionStorage.getItem(sessionStorageKeyAuthenticationRedirectReason);
       if(redirectReason !== authenticationRedirectReasonLogout) sessionStorage.setItem(sessionStorageKeyAuthenticationRedirectReason, authenticationRedirectReasonReloginRequired);
       navigate('/', { replace: true });

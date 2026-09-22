@@ -1,6 +1,4 @@
 # .dev.vars のサンプルファイル
 
-# ログインパスワード
-ADMIN_PASSWORD=example
-# JWT シークレット
-ADMIN_JWT_SECRET=example
+# 管理画面とメインスクリプトで共用する Bearer トークン
+API_TOKEN=example

@@ -3,8 +3,6 @@ import { type ChangeEvent, type ReactElement, type SubmitEvent, useEffect, useSt
 import { useNavigate } from 'react-router';
 
 import { isEmpty } from '../../../shared/helpers/is-empty';
-import { mergeIssues } from '../../../shared/helpers/merge-issues';
-import { loginSchema, passwordDisplayName } from '../../../shared/schemas/login-schema';
 import { authenticationRedirectReasonReloginRequired, sessionStorageKeyAuthenticationRedirectReason } from '../../constants/client-constants';
 import { extractApiErrorMessage } from '../../helpers/extract-api-error-message';
 import { useAdminStore } from '../../stores/admin-store';
@@ -30,19 +28,15 @@ export default function Index(): ReactElement {
     if(!isEmpty(errorMessage)) setErrorMessage('');
   };
   
-  /** 入力されたパスワードを検証し、ログインに成功した場合は JWT を保存してホームページに遷移する */
+  /** 入力されたパスワードを検証し、ログインに成功した場合はトークンを保存してホームページに遷移する */
   const onSubmit = async (event: SubmitEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     setErrorMessage('');
-    
-    const payload = { password };
-    const parsed = loginSchema.safeParse(payload);
-    if(!parsed.success) return setErrorMessage(mergeIssues(parsed.error));
-    
     setIsSubmitting(true);
     try {
-      const response = await ky.post('/api/login', { json: parsed.data }).json<{ result: { token: string; }; }>();
-      useAdminStore.getState().setToken(response.result.token);
+      // 入力されたパスワード文字列をそのまま Bearer トークンとして設定し、API 共通基盤でのチェックに回す
+      await ky.post('/api/login', { headers: { Authorization: `Bearer ${password}` } }).json<{ result: true; }>();
+      useAdminStore.getState().setToken(password);
       navigate('/home');
     }
     catch(error) {
@@ -56,23 +50,21 @@ export default function Index(): ReactElement {
       {/* `main` 要素の余白は `admin-layout.tsx` の `Outlet` ラッパーと揃えておく */}
       <h1>Neo's YouTube Filter</h1>
       
+      <form onSubmit={onSubmit} className="mb-4 flex gap-x-2">
+        <input
+          type="password" value={password} onChange={onChangePassword} disabled={isSubmitting}
+          className="input w-full flex-1 input-sm" placeholder="Password" autoComplete="current-password"
+        />
+        <button type="submit" className="btn shrink-0 btn-sm" disabled={isSubmitting || isEmpty(password)}>Login</button>
+      </form>
+      
       {shouldRequestRelogin && (
         <div className="mb-4 alert alert-soft alert-warning">再度ログインしてください</div>
       )}
       
-      <form onSubmit={onSubmit} className="space-y-4">
-        <input
-          type="password" value={password} onChange={onChangePassword} disabled={isSubmitting}
-          className="input w-full" placeholder={passwordDisplayName}
-          autoComplete="current-password"
-        />
-        
-        {!isEmpty(errorMessage) && (
-          <div className="alert alert-soft alert-error">{errorMessage}</div>
-        )}
-        
-        <button type="submit" className="btn" disabled={isSubmitting || isEmpty(password)}>Login</button>
-      </form>
+      {!isEmpty(errorMessage) && (
+        <div className="alert alert-soft alert-error">{errorMessage}</div>
+      )}
     </main>
   );
 }

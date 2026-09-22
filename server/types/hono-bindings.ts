@@ -3,8 +3,6 @@ export type HonoBindings = {
   /** Cloudflare D1 データベース */
   DB: D1Database;
   
-  /** ログインパスワード */
-  ADMIN_PASSWORD: string;
-  /** JWT シークレット */
-  ADMIN_JWT_SECRET: string;
+  /** 管理画面とメインスクリプトで共用する Bearer トークン */
+  API_TOKEN: string;
 };

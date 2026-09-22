@@ -21,7 +21,7 @@ export default function AdminLayout(): ReactElement {
   /** サイドメニューのリンクを押下した時にサイドメニューを閉じるためのイベント */
   const onCloseSidebar = (): void => setIsSidebarOpen(false);
   
-  /** ユーザ操作によるログアウト理由を記録してから JWT を削除し、トップページに遷移する */
+  /** ユーザ操作によるログアウト理由を記録してからトークンを削除し、トップページに遷移する */
   const onLogout = (): void => {
     if(!window.confirm('ログアウトしますか？')) return;
     

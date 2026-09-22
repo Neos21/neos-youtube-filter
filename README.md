@@ -119,8 +119,6 @@ PC Brave の Tampermonkey で以下のように `@require` で指定すること
 サンプルコードには `example`・`examples` の命名・記載がある他、隅付き括弧を用いたプレースホルダを記載している。以下は最終的に実コードから削除して良い。
 
 - `server/repositories/examples-repository.txt`
-- `server/routes/api/examples/`
-- `shared/schemas/example-schema.ts`
 
 
 ## 技術スタック
@@ -176,14 +174,14 @@ $ npm run dev
 
 ## API エンドポイント一覧
 
-| リソース | メソッド | パス                | 用途                                |
-|----------|----------|---------------------|-------------------------------------|
-| 認証     | `POST`   | `/api/login`        | パスワードを照合して JWT を発行する |
-| サンプル | `GET`    | `/api/examples`     | 一覧を取得する                      |
-| サンプル | `GET`    | `/api/examples/:id` | 1件取得する                         |
-| サンプル | `POST`   | `/api/examples`     | 追加する                            |
-| サンプル | `PATCH`  | `/api/examples/:id` | 更新する                            |
-| サンプル | `DELETE` | `/api/examples/:id` | 削除する                            |
+| リソース | メソッド | パス                | 用途                              |
+|----------|----------|---------------------|-----------------------------------|
+| 認証     | `POST`   | `/api/login`        | Bearer トークンの有効性を確認する |
+| サンプル | `GET`    | `/api/examples`     | 一覧を取得する                    |
+| サンプル | `GET`    | `/api/examples/:id` | 1件取得する                       |
+| サンプル | `POST`   | `/api/examples`     | 追加する                          |
+| サンプル | `PATCH`  | `/api/examples/:id` | 更新する                          |
+| サンプル | `DELETE` | `/api/examples/:id` | 削除する                          |
 
 
 ## Links
