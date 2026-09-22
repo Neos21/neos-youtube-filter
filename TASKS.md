@@ -34,7 +34,7 @@
     - 完了記録 (2026-09-22) : 現在のログイン・Schema・Repository サンプル・メインスクリプト・作業ルールを確認し、開発者の回答と以下の実装契約を整理した。ここに記す内容は後続タスクで実装する契約であり、現行実装の説明ではない
     - 開発者が確定した仕様 : 両クライアントとも固定トークンを使用し、JWT は廃止する。購読チャンネルもトグル ON 時に非表示とし、検索結果への遷移時は OFF に戻す
     - 開発者が確定した一致条件 : 文字列は動画名・チャンネル名それぞれの `toLowerCase().includes(pattern.toLowerCase())` 相当で部分一致させる。正規表現はスラッシュで囲まず保存する。いずれかの非表示条件に一致すれば対象とし、購読情報を表示優先の例外にしない
-    - フラグの保存契約 : `flags` は `TEXT NOT NULL DEFAULT 'iu'` とし、正規表現のフラグなしは空文字で保存する。管理画面の正規表現作成時は `iu` を初期入力する。API の作成時は未指定なら `iu`、明示した空文字はそのまま保持し、NULL は拒否する。文字列型ではフラグを使用せず空文字で保存する。PATCH の未指定は保持し、文字列から正規表現への切替時にフラグ未指定なら `iu` とする
+    - フラグの保存契約 : `flags` は `TEXT NOT NULL DEFAULT 'iu'` とし、正規表現のフラグなしは空文字で保存する。管理画面の正規表現作成時は `iu` を初期入力する。API の作成時は未指定なら `iu`、明示した空文字はそのまま保持し、NULL は拒否する。文字列型ではフラグを使用せず空文字で保存する。パターンの PATCH は `type`・`pattern`・`flags` をすべて必須とし、文字列から正規表現への切替時もフラグを明示する
     - 開発者が確定した表示制御 : トグル OFF 中の登録成功時もカードを表示したままにする。メモリとキャッシュの条件は更新し、ON にした際に反映する。表示・非表示は常にトグル状態に従う
     - 開発者が確定した Shorts 対応 : ホーム・関連動画・検索結果内の Shorts カードも対象にする。`/shorts/動画ID` 等から動画 ID を抽出し、DOM からチャンネル識別子が確認できる場合はチャンネル単位でも扱う。Shorts 専用プレイヤーでは非表示・ボタン追加等を動かさない。別の拡張機能による通常動画ページへのリダイレクトは本プロジェクトでは実装しない
     - 認証の実装契約 : 共通の環境変数 `API_TOKEN` と Authorization の `Bearer` 値を照合する。両クライアントから同じ CRUD・情報取得 API を利用できる。`POST /api/login` は Bearer トークンの有効性確認として残し、成功時は `{ result: true }` を返す。管理画面は入力したトークンを確認成功後に既存 Store へ保存する。JWT の生成・検証・専用シークレット・パスワード照合は削除し、既存 JWT は再ログインで置き換える
@@ -44,7 +44,7 @@
     - 登録・更新の契約 : POST は INSERT、PATCH は UPDATE、PUT は INSERT ... ON CONFLICT DO UPDATE を実行し、それぞれ RETURNING で全カラムを1クエリで返す。PATCH・PUT の更新句はカラム数にかかわらず buildUpdateQuery で構築する。PUT は動画を video_id、チャンネルを handle または channel_id の一意制約で照合し、省略項目は保持、明示 null はクリアする。id・created_at は更新しない。事前 SELECT・batch・割り込み対策は行わない
     - パターンの入力契約 : パターンは空文字を拒否し、意味を変える前後空白の除去をしない。正規表現とフラグの組み合わせを検証し、不正値は 400 とする。正規表現の連続評価では `lastIndex` をリセットする。フラグの対応範囲は対象ブラウザでの検証時に確認し、実行環境で構築できないキャッシュ内パターンはスキップしてエラーを通知する
     - API 契約 : `/api/blocked-videos`・`/api/blocked-channels`・`/api/blocked-patterns`・`/api/subscribed-channels` に GET (一覧)・POST (登録)、各 `/:id` に GET・PATCH・DELETE を用意する。JSON のカラム名は DB と同じ snake_case とする。一覧は id 昇順の配列、取得・登録・更新は保存後のレコード、削除は true を `result` に格納する。POST 成功は 201、PUT は新規・更新とも 200、取得・更新・削除は 200。不正入力は 400、存在しない ID は 404、DB の登録・更新失敗は 500 とし、エラーは `{ error: メッセージ }` とする 動画・チャンネルは各コレクションパスに PUT を追加する
-    - 更新契約 : PATCH の未指定は保持、NULL 許容項目への明示 NULL はクリアとする。動画・チャンネルの空 PATCH は 400、存在しない ID は 404 とする。チャンネルの識別子が両方空になる更新や重複は DB 制約で拒否し、Controller が SQL エラーのメッセージをそのまま error に入れて 500 で返す。主キー・登録日時・未知の入力項目は Schema で拒否する
+    - 更新契約 : 動画・チャンネルの PATCH の未指定は保持、NULL 許容項目への明示 NULL はクリアとする。動画・チャンネルの空 PATCH は 400、存在しない ID は 404 とする。チャンネルの識別子が両方空になる更新や重複は DB 制約で拒否し、Controller が SQL エラーのメッセージをそのまま error に入れて 500 で返す。主キー・登録日時・未知の入力項目は Schema で拒否する
     - 取得 API 契約 : `GET /api/filter-rules` は `{ result: { blocked_videos: [...], blocked_channels: [...], blocked_patterns: [...], subscribed_channels: [...] } }` を返す。各配列は該当テーブルのレコードとし、取得失敗を空配列として扱わない
     - キャッシュ契約 : 保存形式に版と取得日時を持ち、起動時は有効な形式のキャッシュで表示を開始して API から再取得する。対象ページへの遷移時も再取得し、登録成功時はメモリとキャッシュへ即時反映する。通信失敗では既存キャッシュを利用し、401 は再設定を案内する。初回取得失敗・破損時は条件なしで表示を維持し、再試行できるようにする。定期ポーリングは初期実装に含めない
     - 責務と State : Controller は認証・入出力・Schema 検証・SQL エラー処理、Repository は SQL の実行、shared は型・Schema・共有処理を担当する。Service クラスは作らない。管理画面は認証を既存 Store、一覧・編集中入力・通信状態を必要な所有箇所で保持する。メインスクリプトは `window.__YTF__` 配下に初期化状態・条件・トグル・監視解除処理を保持する
@@ -87,10 +87,13 @@
     - 完了記録 : GET 一覧・1件、POST、PATCH、PUT、DELETE を実装済み。ハンドルだけ・チャンネル ID だけ・両方で登録できる。PUT は handle または channel_id の一意制約で照合し、省略項目は保持、明示 null はクリアする
     - レビュー反映 : Service と resolveBlockedChannelUpdate を削除した。Repository は INSERT・UPDATE・UPSERT を各1クエリの RETURNING で実行し、PATCH・PUT の更新句は buildUpdateQuery で構築する。事前 SELECT・batch・割り込み対策・onError は使わず、Controller が SQL エラーをそのまま error メッセージとして返す
     - 検証 : Lint・ビルド成功。一時 SQLite で CRUD・PUT、各書き込みの1クエリ完結、全カラムの返却、省略項目保持、null クリア、登録日時保持、別レコードへ一致する識別子の競合、識別子の全消去時の CHECK エラー、認証・404・SQL エラー返却を確認した。D1 操作・スキーマ変更は不要
-- [ ] 07. 非表示パターンの Repository と CRUD API を実装する
+- [x] 07. 非表示パターンの Repository と CRUD API を実装する
     - 対象 : `server/repositories/`、`server/routes/api/`
     - `blocked_patterns` の文字列・正規表現・フラグを保存し、作成時と更新後の組み合わせを検証する
     - 完了条件 : CRUD、型の切替、既定フラグ `iu`、明示フラグ、不正パターン・フラグの拒否を確認する
+    - 完了記録 (2026-09-22) : `BlockedPatternsRepository` と `/api/blocked-patterns` の GET・POST・PATCH・DELETE を実装した。既存 Controller のコメント・例外処理の書き方に合わせ、Repository は SQL 実行のみとした
+    - 確定した更新契約 : PATCH は `type`・`pattern`・`flags` をすべて必須とする。共有 Schema で更新後の組み合わせを検証し、事前 SELECT・既存値との統合を行わず、buildUpdateQuery と UPDATE ... RETURNING の1クエリで全カラムを返す。POST も INSERT ... RETURNING の1クエリとする
+    - 検証結果 : Lint・ビルド成功。メモリ上の SQLite を使った28件の API 確認で CRUD、型の切替、既定・空フラグ、空白保持、不正入力・部分 PATCH の拒否、404、認証、登録日時の保持、書き込み時の単一クエリを確認した。D1 操作・マイグレーションは不要
 - [ ] 08. 購読チャンネルの Repository と CRUD API を実装する
     - 対象 : `server/repositories/`、`server/routes/api/`
     - `subscribed_channels` をブロックとは別リソースとして管理し、06 で確定した識別子の正規化・紐付け規則を再利用する

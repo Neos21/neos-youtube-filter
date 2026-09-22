@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
 import { blockedChannels, blockedChannelsPath } from './blocked-channels/blocked-channels';
+import { blockedPatterns, blockedPatternsPath } from './blocked-patterns/blocked-patterns';
 import { blockedVideos, blockedVideosPath } from './blocked-videos/blocked-videos';
 import { login, loginPath } from './login/login';
 import { httpStatusCode } from '../../../shared/constants/http-status-code';
@@ -34,6 +35,7 @@ api.use('*', async (context, next) => {
 api.route(loginPath          , login);
 api.route(blockedVideosPath  , blockedVideos);
 api.route(blockedChannelsPath, blockedChannels);
+api.route(blockedPatternsPath, blockedPatterns);
 
 // TODO : テスト用・後で消す
 api.get('/test', context => {
