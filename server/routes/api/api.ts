@@ -5,6 +5,7 @@ import { blockedChannels, blockedChannelsPath } from './blocked-channels/blocked
 import { blockedPatterns, blockedPatternsPath } from './blocked-patterns/blocked-patterns';
 import { blockedVideos, blockedVideosPath } from './blocked-videos/blocked-videos';
 import { login, loginPath } from './login/login';
+import { subscribedChannels, subscribedChannelsPath } from './subscribed-channels/subscribed-channels';
 import { httpStatusCode } from '../../../shared/constants/http-status-code';
 import { isEmpty } from '../../../shared/helpers/is-empty';
 
@@ -32,10 +33,11 @@ api.use('*', async (context, next) => {
   await next();
 });
 
-api.route(loginPath          , login);
-api.route(blockedVideosPath  , blockedVideos);
-api.route(blockedChannelsPath, blockedChannels);
-api.route(blockedPatternsPath, blockedPatterns);
+api.route(loginPath             , login);
+api.route(blockedVideosPath     , blockedVideos);
+api.route(blockedChannelsPath   , blockedChannels);
+api.route(blockedPatternsPath   , blockedPatterns);
+api.route(subscribedChannelsPath, subscribedChannels);
 
 // TODO : テスト用・後で消す
 api.get('/test', context => {

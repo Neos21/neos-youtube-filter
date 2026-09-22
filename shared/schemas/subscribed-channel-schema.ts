@@ -41,12 +41,12 @@ export const createSubscribedChannelSchema = channelFieldsSchema.refine(
  * 
  * 省略した項目は変更しないという意味で、値を補完しない
  * 明示した `null` や空文字はその項目を消すという意味で、`null` として出力する
- * 両識別子を明示的に消す入力は拒否するが、片方だけの削除が可能か否かは DB の既存値によって異なる
- * 呼び出し側は成功時の `data` と取得済みレコードを `resolveSubscribedChannelUpdate()` に渡し、更新後の内容も検証する
+ * 空の PATCH は更新する項目がないため拒否する
+ * 更新後に両識別子がなくなる場合は DB の `CHECK` 制約で拒否される
  */
 export const updateSubscribedChannelSchema = channelFieldsSchema.partial().refine(
-  value => value.handle !== null || value.channel_id !== null,
-  { message: 'ハンドルとチャンネル ID を両方削除できません', path: ['handle'] }
+  value => value.handle !== undefined || value.channel_id !== undefined || value.title !== undefined,
+  { message: '更新する項目を指定してください' }
 );
 
 /** `createSubscribedChannelSchema` で検証・整形した後の登録用入力型 */
@@ -60,25 +60,16 @@ export type CreateSubscribedChannel = z.output<typeof createSubscribedChannelSch
 export type UpdateSubscribedChannel = z.output<typeof updateSubscribedChannelSchema>;
 
 /**
- * DB から取得した既存値に PATCH の変更項目を反映し、保存予定の内容を検証する
+ * ハンドルまたはチャンネル ID を照合キーとして追加または更新する PUT 用の Schema
  * 
- * 例えば既存値が `{ handle : '@example', channel_id : null }` のとき `{ handle : null }` による更新は拒否する
- * 既存の `channel_id` が残る場合は同じ入力でも成功し、`handle` だけを削除できる
- * 
- * 呼び出し順は `updateSubscribedChannelSchema.safeParse()` → DB の既存レコード取得 → この関数とする
- * 呼び出し側が成功時の `data` を Repository に渡して保存する
- * 
- * @param current 保存済みレコードの `handle`・`channel_id`・`title`
- *                ID や登録日時を持つ Entity も渡せるが、この関数は変更可能な項目だけを取り出す
- * 
- * @param update `updateSubscribedChannelSchema.safeParse()` の成功時に得た `data`
- *               省略された項目は `current` の値を使用し、`null` が明示されていたら既存値を消す
- * 
- * @returns 成功時は `{ success : true, data }` として保存予定の項目を返す
- *          両識別子がなくなる場合などは `{ success : false, error }` を返すため、保存せず入力エラーとして扱う
+ * 少なくとも一方の識別子を指定し、省略した項目は既存値を保持する
+ * `null` または空文字を指定した項目はクリアし、新規追加時の省略項目は `null` を保存する
+ * 両識別子が別レコードを指す場合などの競合は DB の一意制約で拒否する
  */
-export const resolveSubscribedChannelUpdate = (current: CreateSubscribedChannel, update: UpdateSubscribedChannel): ReturnType<typeof createSubscribedChannelSchema.safeParse> => createSubscribedChannelSchema.safeParse({
-  handle    : update.handle     === undefined ? current.handle     : update.handle,
-  channel_id: update.channel_id === undefined ? current.channel_id : update.channel_id,
-  title     : update.title      === undefined ? current.title      : update.title
-});
+export const upsertSubscribedChannelSchema = channelFieldsSchema.partial().refine(
+  value => value.handle != null || value.channel_id != null,
+  { message: 'ハンドルかチャンネル ID を入力してください', path: ['handle'] }
+);
+
+/** PUT の検証後の入力型・`undefined` は既存値の保持、`null` はクリアを表す */
+export type UpsertSubscribedChannel = z.output<typeof upsertSubscribedChannelSchema>;

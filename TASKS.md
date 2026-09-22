@@ -94,10 +94,13 @@
     - 完了記録 (2026-09-22) : `BlockedPatternsRepository` と `/api/blocked-patterns` の GET・POST・PATCH・DELETE を実装した。既存 Controller のコメント・例外処理の書き方に合わせ、Repository は SQL 実行のみとした
     - 確定した更新契約 : PATCH は `type`・`pattern`・`flags` をすべて必須とする。共有 Schema で更新後の組み合わせを検証し、事前 SELECT・既存値との統合を行わず、buildUpdateQuery と UPDATE ... RETURNING の1クエリで全カラムを返す。POST も INSERT ... RETURNING の1クエリとする
     - 検証結果 : Lint・ビルド成功。メモリ上の SQLite を使った28件の API 確認で CRUD、型の切替、既定・空フラグ、空白保持、不正入力・部分 PATCH の拒否、404、認証、登録日時の保持、書き込み時の単一クエリを確認した。D1 操作・マイグレーションは不要
-- [ ] 08. 購読チャンネルの Repository と CRUD API を実装する
+- [x] 08. 購読チャンネルの Repository と CRUD API を実装する
     - 対象 : `server/repositories/`、`server/routes/api/`
     - `subscribed_channels` をブロックとは別リソースとして管理し、06 で確定した識別子の正規化・紐付け規則を再利用する
     - 完了条件 : CRUD、識別子補完、重複・競合を確認し、同じチャンネルのブロック情報を変更しない
+    - 完了記録 (2026-09-22) : `SubscribedChannelsRepository` と `/api/subscribed-channels` の GET・POST・PATCH・PUT・DELETE を実装した。非表示チャンネルと同じ正規化・更新方式を採用し、購読用 Schema は同テーブルのファイル内に独立して定義した
+    - 更新契約 : POST は INSERT、PATCH は UPDATE、PUT は一意制約による UPSERT とし、各書き込みは RETURNING 付きの1クエリで全カラムを返す。PATCH・PUT の更新句は buildUpdateQuery で構築する。省略項目は保持、明示 null はクリアし、空 PATCH は拒否する。識別子消失・競合は DB 制約に任せ、事前 SELECT と既存値統合用 Resolver は使用しない
+    - 検証結果 : Lint・ビルド成功。メモリ上の SQLite による33件の API 確認で CRUD・UPSERT、URL 正規化、識別子補完、保持・クリア、重複・競合、不正入力、404・認証、登録日時の保持、単一クエリ、ブロック情報の独立性を確認した。SQL 例外の応答は既存 Controller と同じ Hono 標準の 500 に従う。D1 操作・マイグレーションは不要
 - [ ] 09. メインスクリプト向けフィルター情報取得 API を実装する
     - 対象 : `server/repositories/`、`server/routes/api/`、応答用の共有型
     - 4テーブルをまとめる Read Model を固定 Bearer トークンで取得できるようにする。Service クラスを作らない最新方針に従い、集約処理の配置は着手時に具体化する
