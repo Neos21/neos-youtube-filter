@@ -21,13 +21,14 @@ export const createBlockedVideoSchema = z.strictObject({
 });
 
 /**
- * 非表示動画の PATCH リクエストに含まれる項目だけを整形・検証する Schema
+ * 非表示動画の PATCH リクエストでタイトルだけを整形・検証する Schema
  * 
  * 例えば `{ title : null }` はタイトルだけを消す指定で、`video_id` は変更しない
  * 省略項目は出力にも補完せず、呼び出し側は `undefined` の項目を更新対象から除外する
- * `video_id` の `null` は拒否し、`id`・`created_at`・その他未定義の項目も受け付けない
+ * 登録後の `video_id` は変更不可とし、同じ値であっても入力を拒否する
+ * `id`・`created_at`・その他未定義の項目も受け付けない
  */
-export const updateBlockedVideoSchema = createBlockedVideoSchema.partial();
+export const updateBlockedVideoSchema = createBlockedVideoSchema.pick({ title: true }).partial();
 
 /**
  * 登録 Schema の検証・整形後の入力型
