@@ -11,7 +11,7 @@ export const apiPath = '/api' as const;  // エンドポイントパスをイン
 // CORS を許可する
 api.use('*', cors({
   origin: '*',
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization']
 }));
 

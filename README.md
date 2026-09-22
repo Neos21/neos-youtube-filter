@@ -72,7 +72,7 @@ export default await createHonoServer({ app });
 ```typescript
 api.use('*', cors({
   origin: '*',
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization']
 }));
 ```
@@ -83,9 +83,16 @@ PC Brave、iPhone Safari、iPhone Brave ブラウザにて、`www.youtube.com` �
 
 ```javascript
 javascript:(async () => {
-  const policy = trustedTypes.createPolicy('neos-ytf', { createScript : code => code });
-  const code = await fetch('https://ytf.neos21.workers.dev/ytf.js').then(res => res.text());
-  eval(policy.createScript(code));
+  try {
+    const policy = trustedTypes.createPolicy('neos21-ytf', { createScript: code => code });
+    const response = await fetch('https://ytf.neos21.workers.dev/ytf.js');
+    const code = await response.text();
+    eval(policy.createScript(code));
+  }
+  catch(error) {
+    console.error('スクリプト読み込みに失敗しました', error);
+    alert(`スクリプト読み込みに失敗しました : ${error}`);
+  }
 })();
 ```
 

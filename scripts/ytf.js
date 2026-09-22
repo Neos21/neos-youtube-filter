@@ -26,9 +26,3 @@
     alert('POST 失敗 : ' + error);
   }
 })();
-
-// javascript : (async () => {
-//   const policy = trustedTypes.createPolicy('neos-ytf', { createScript : code => code });
-//   const code = await fetch('https://ytf.neos21.workers.dev/ytf.js').then(res => res.text());
-//   eval(policy.createScript(code));
-// })();
