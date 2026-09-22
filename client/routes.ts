@@ -4,7 +4,8 @@ import { index, layout, route, type RouteConfig } from '@react-router/dev/routes
 export default [
   index('./pages/index/index.tsx'),
   layout('./layouts/admin-layout.tsx', [
-    route('/home', './pages/home/home.tsx'),
-    route('/blocked-videos', './pages/blocked-videos/blocked-videos.tsx')
+    route('/home'            , './pages/home/home.tsx'),
+    route('/blocked-videos'  , './pages/blocked-videos/blocked-videos.tsx'),
+    route('/blocked-channels', './pages/blocked-channels/blocked-channels.tsx')
   ])
 ] satisfies RouteConfig;

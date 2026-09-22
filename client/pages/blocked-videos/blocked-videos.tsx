@@ -17,15 +17,15 @@ export default function BlockedVideos(): ReactElement {
   
   const [isCreateOpen , setIsCreateOpen ] = useState<boolean>(false);  // 新規登録モーダルを表示するか否か
   const [createVideoId, setCreateVideoId] = useState<string>('');      // 新規登録する動画 ID または URL
-  const [createTitle  , setCreateTitle  ] = useState<string>('');      // 新規登録する参考タイトル
+  const [createTitle  , setCreateTitle  ] = useState<string>('');      // 新規登録する動画タイトル
   const [createError  , setCreateError  ] = useState<string>('');      // 新規登録エラー
   
   const [editingBlockedVideo, setEditingBlockedVideo] = useState<BlockedVideo | null>(null);  // 編集対象・`null` は編集モーダルを閉じた状態
-  const [editTitle          , setEditTitle          ] = useState<string>('');                 // 編集中の参考タイトル・空文字で未設定に戻す
+  const [editTitle          , setEditTitle          ] = useState<string>('');                 // 編集中の動画タイトル・空文字で未設定に戻す
   const [editError          , setEditError          ] = useState<string>('');                 // 更新・削除エラー
   
   /** 一覧を再取得する */
-  const onLoadVideos = async (): Promise<void> => {
+  const onLoadBlockedVideos = async (): Promise<void> => {
     setIsLoading(true);
     setListError('');
     try {
@@ -43,7 +43,7 @@ export default function BlockedVideos(): ReactElement {
   // 初期表示時に一覧を取得する
   useEffect(() => {
     (async () => {
-      await onLoadVideos();
+      await onLoadBlockedVideos();
     })();
   }, []);
   
@@ -76,7 +76,7 @@ export default function BlockedVideos(): ReactElement {
     try {
       await adminApi.post('/api/blocked-videos', { json: parsed.data }).json<{ result: BlockedVideo; }>();
       setIsCreateOpen(false);
-      await onLoadVideos();
+      await onLoadBlockedVideos();
     }
     catch(error) {
       setCreateError(extractApiErrorMessage(error, '非表示動画の追加に失敗しました'));
@@ -113,7 +113,7 @@ export default function BlockedVideos(): ReactElement {
     try {
       await adminApi.patch(`/api/blocked-videos/${editingBlockedVideo.id}`, { json: parsed.data }).json<{ result: BlockedVideo; }>();
       setEditingBlockedVideo(null);
-      await onLoadVideos();
+      await onLoadBlockedVideos();
     }
     catch(error) {
       setEditError(extractApiErrorMessage(error, '非表示動画の更新に失敗しました'));
@@ -123,7 +123,7 @@ export default function BlockedVideos(): ReactElement {
     }
   };
   
-  /** 選択した動画を削除し、成功後に一覧を再取得する */
+  /** 削除する */
   const onDelete = async (): Promise<void> => {
     if(isSubmitting || editingBlockedVideo == null) return;
     
@@ -135,7 +135,7 @@ export default function BlockedVideos(): ReactElement {
     try {
       await adminApi.delete(`/api/blocked-videos/${editingBlockedVideo.id}`).json<{ result: true; }>();
       setEditingBlockedVideo(null);
-      await onLoadVideos();
+      await onLoadBlockedVideos();
     }
     catch(error) {
       setEditError(extractApiErrorMessage(error, '非表示動画の削除に失敗しました'));
@@ -147,7 +147,7 @@ export default function BlockedVideos(): ReactElement {
   
   return (
     <main>
-      <h1>非表示動画</h1>
+      <h1 className="mb-4 font-bold">非表示動画</h1>
       
       <div className="mb-4 text-right">
         <button type="button" className="btn btn-info" onClick={onStartCreate} disabled={isLoading || isSubmitting}>新規登録</button>
@@ -156,7 +156,7 @@ export default function BlockedVideos(): ReactElement {
       {!isEmpty(listError) && (
         <div className="mb-4 alert alert-soft alert-error">
           <span>{listError}</span>
-          <button type="button" className="btn btn-sm" onClick={onLoadVideos} disabled={isLoading || isSubmitting}>再取得</button>
+          <button type="button" className="btn btn-error btn-sm" onClick={onLoadBlockedVideos} disabled={isLoading || isSubmitting}>再取得</button>
         </div>
       )}
       
@@ -188,7 +188,7 @@ export default function BlockedVideos(): ReactElement {
             {blockedVideos.map(blockedVideo => (
               <tr key={blockedVideo.id}>
                 <td className="text-right whitespace-nowrap">{blockedVideo.id}</td>
-                <td className="whitespace-nowrap">{blockedVideo.video_id}</td>
+                <td className="whitespace-nowrap"><a href={`https://www.youtube.com/watch?v=${blockedVideo.video_id}`} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">{blockedVideo.video_id}</a></td>
                 <td className="wrap-break-word">{blockedVideo.title ?? '-'}</td>
                 <td className="text-center whitespace-nowrap">{blockedVideo.created_at}</td>
                 <td className="text-center whitespace-nowrap"><button type="button" className="btn btn-xs" onClick={() => onStartEdit(blockedVideo)} disabled={isLoading || isSubmitting}>編集</button></td>
