@@ -77,41 +77,9 @@ api.use('*', cors({
 }));
 ```
 
-「メインスクリプト」となる `scripts/ytf.js` を `$ npm run build` 後に `build/client/ytf.js` へと配置してデプロイすることで、ブックマークレットから読み込めるようにした。
+「メインスクリプト」は `scripts/ytf.ts` を入口に `$ npm run build:ytf` で `build/client/ytf.js` を生成する。`$ npm run build` でもアプリのビルド後に生成する。
 
-PC Brave、iPhone Safari、iPhone Brave ブラウザにて、`www.youtube.com` および `m.youtube.com` 上で以下のブックマークレットを実行することで、「メインスクリプト」を読み込んで実行できることを確認した。
-
-```javascript
-javascript:(async () => {
-  try {
-    const policy = trustedTypes.createPolicy('neos21-ytf', { createScript: code => code });
-    const response = await fetch('https://ytf.neos21.workers.dev/ytf.js');
-    const code = await response.text();
-    eval(policy.createScript(code));
-  }
-  catch(error) {
-    console.error('スクリプト読み込みに失敗しました', error);
-    alert(`スクリプト読み込みに失敗しました : ${error}`);
-  }
-})();
-```
-
-PC Brave の Tampermonkey で以下のように `@require` で指定することで、YouTube 読み込み時に「メインスクリプト」を読み込んで実行できることを確認した。
-
-```javascript
-// ==UserScript==
-// @name         Neo's YouTube Filter
-// @namespace    https://neos21.net/
-// @version      2026-09-22
-// @description  Neo's YouTube Filter
-// @author       Neos21
-// @match        https://www.youtube.com/*
-// @match        https://m.youtube.com/*
-// @require      https://ytf.neos21.workers.dev/ytf.js
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=youtube.com
-// @run-at       document-idle
-// ==/UserScript==
-```
+現在の起動・トークン設定とブックマークレット・Tampermonkey の呼び出し例は、[メインスクリプトの起動と設定](./docs/features/main-script.md) を参照のこと。
 
 
 ## サンプルとしての機能

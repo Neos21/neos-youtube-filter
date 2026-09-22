@@ -154,11 +154,15 @@
     - ビルド契約 : build・build-only の最後に build:ytf を実行する。ルート tsconfig は scripts を除外し、導入用 JavaScript 例は ESLint の型情報を使用しない。既存 npm 設定が package-lock=false でロックファイルも未管理のため、新規ロックファイルは追加していない。実行手順は CONTRIBUTING.md を参照する
     - 検証結果 : Lint・全体ビルド成功。アプリ・生成型・シークレットなしの一時環境で単独ビルド成功、型エラー時の停止、圧縮された通常スクリプトとしての構文を確認した。ローカル Wrangler で /ytf.js の本体・JavaScript MIME・YouTube 両ドメイン向け CORS、SPA フォールバック、未認証 API の 401 を確認した。D1 クエリ・デプロイは未実行
     - 次タスクへの引継ぎ : スクリプト本体は既存の読込確認用 alert と /api/test 呼出を TypeScript に移した段階。実際の起動・設定は15、フィルター情報取得は16以降で実装する。Safari・Chrome 実機での動作は未検証
-- [ ] 15. メインスクリプトの起動・設定・重複ロード防止を実装する
+- [x] 15. メインスクリプトの起動・設定・重複ロード防止を実装する
     - 対象 : `scripts/ytf.ts` と必要な TypeScript モジュール・型定義、導入手順
     - 14 のビルド基盤を利用し、Tampermonkey・ブックマークレットから同じ `/ytf.js` を実行する
     - `window.__YTF__` で初期化中も含めて重複実行を防ぎ、起動失敗後の再試行方法を定める。API の URL とユーザー自身のトークンを安全に設定できる入口を用意する
     - 完了条件 : ビルド成果物が JavaScript として取得でき、秘密値を含まない。Tampermonkey・ブックマークレットの双方で設定を渡せ、再実行で UI・イベントが重複しない
+    - 完了記録 : eval・@require による評価時に自動起動し、window.__YTF__.status で初期化中・起動済みの多重実行を防ぐ。start・configure や外部設定引数は使用しない。API URL は scripts/ytf.ts 内の定数とする
+    - トークン契約 : 固定キー ytf:token で LocalStorage に保存し、API URL を変更しても保存場所は変えない。未保存・空欄時に prompt で入力を求め、POST /api/login 成功後に保存する。401 は一致する保存値を削除し、キャンセル・通信失敗後も再評価で再試行できる。保存不可でも起動を継続する
+    - 導入契約 : bookmarklet-example.js は開発者指定により元の内容に戻した。Tampermonkey は @require のみで起動する。手順は docs/features/main-script.md に記載し、公開コード・URL・ログにはトークンを含めない
+    - 検証 : Lint・全体ビルドと模擬環境で自動起動・重複評価・固定キー保存・401 後の再入力・キャンセル後の再試行を確認した。実ブラウザ・実トークンの通信は未検証。情報取得とキャッシュは16以降で実装する
 - [ ] 16. フィルター情報の取得と LocalStorage キャッシュを実装する
     - 対象 : メインスクリプトの API クライアント・キャッシュ処理
     - 09 の API を Authorization ヘッダ付きで呼び、正常な取得結果を LocalStorage に保存する。キャッシュの形式・版・更新タイミングは 01 の契約に従う

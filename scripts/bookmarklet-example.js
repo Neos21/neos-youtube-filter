@@ -1,5 +1,7 @@
 // ブックマークレットのサンプル
-(async () => {
+
+/* eslint-disable */
+javascript:(async () => {
   try {
     const policy = trustedTypes.createPolicy('neos21-ytf', { createScript: code => code });
     const response = await fetch('https://ytf.neos21.workers.dev/ytf.js');
