@@ -3,24 +3,117 @@
 YouTube の見たくない動画を非表示にする仕組み。
 
 
+## コンセプト
+
+- **YouTube の「ホーム画面」、「動画ページの関連動画欄」、「検索結果ページ」から、「非表示にしたい動画」を非表示にする仕組みを作る**
+- D1 データベースに「非表示にしたい動画情報」を持つ
+    - `blocked_videos` テーブル : 動画単位で非表示にする
+        - `https://www.youtube.com/watch?v=XXXXXXXXXXX` の `XXXXXXXXXXX` 部分を `video_id` カラムに保持する
+        - (動画タイトルも `title` カラムに参考情報として保持しておく)
+    - `blocked_channels` テーブル : チャンネル単位で非表示にする
+        - `https://www.youtube.com/@HANDLE` の `@HANDLE` 部分を `handle` カラムに保持する
+        - `https://www.youtube.com/channel/UCXXXXXXXXXXXXXXXXXXXXXX` の `UCXXXXXXXXXXXXXXXXXXXXXX` 部分を `channel_id` カラムに保持する
+        - YouTube の DOM からはいずれかしか検出できないが、両方の紐付けができれば同一レコードに保持する
+        - (チャンネル名も `title` カラムに参考情報として保持しておく)
+    - `blocked_patterns` テーブル : 文字列もしくは正規表現を用意しておき、動画名もしくはチャンネル名にヒットしたら非表示にする
+        - `type` カラム : `string` か `regexp`
+        - `pattern` カラム : 非表示にしたい文字列か正規表現
+        - `flags` カラム : 正規表現の場合、デフォルトでは `iu` を指定するが、それ以外を明示的に指定したい場合にフラグを指定する
+    - `subscribed_channels` テーブル : 購読しているチャンネル情報・`blocked_channels` とは異なる理由で非表示とするため別途保持する
+        - `handle`・`channel_id`・`title` カラムを持つ
+- React Router SPA にて上述の D1 を CRUD できるようにし、「非表示にしたい動画情報」を管理できるようにする
+- Hono で API を定義する・この API は 後述の「メインスクリプト」からもコール可能にする
+- PC の場合 Tampermonkey より、iPhone の場合ブックマークレットより「メインスクリプト `/ytf.js`」を読み込み、このスクリプトが YouTube 上で実際に動画を非表示にする
+    - メインスクリプトから API コールして「非表示にしたい動画情報」を取得し、それと突合して動画を非表示にする
+    - API コールには Bearer トークンを指定するが、ブックマークレットからの呼び出しが容易になるように JWT を発行するのではなく固定文字列による簡易認証とする
+    - API コールして取得した結果は LocalStorage にもキャッシュを持つようにする
+    - `.ytf-hidden { display: none !important; }` といった CSS を注入し、CSS クラス指定で非表示にする (`style` 属性値を直接書き換えない)
+    - 画面右上にチェックボックスを配置し、動画を非表示にするか、非表示を解除するかをトグルできるようにする
+        - 「ホーム画面」「動画ページ」では「非表示にする (チェック状態)」をデフォルトに、「検索結果ページ」では「非表示にしない (チェックを外した状態)」をデフォルトにする
+        - YouTube 内のページ移動は `window.addEventListener('yt-navigate-finish')` で検出可能、ページ移動ごとに `new URL(location.href)` をチェックすれば良さそう
+    - 同じメインスクリプトを重複してロードしないように `window.__YTF__` オブジェクトを生成しチェックする仕組みを作る
+    - 動画サムネイル上に「この動画を非表示にする」「このチャンネルを非表示にする」ボタンを配置し、クリックで API コールして「非表示にする動画情報」を D1 に追加しつつ、画面上も非表示にする
+
+
+## 検証済みの内容
+
+`public/_headers` → `build/client/_headers` に以下を記しておくことで、`www.youtube.com` および `m.youtube.com` からのアクセスを許可し、「メインスクリプト」を読み込めるようにした。
+
+```
+/*
+  Access-Control-Allow-Origin: *
+```
+
+`wrangler.jsonc` に以下のように指定することで、`/api` 配下への Fetch リクエストが Workers に到達するようにした。
+
+```json
+{
+  "assets": {
+    "directory": "./build/client",
+    "not_found_handling": "single-page-application",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  }
+}
+```
+
+`server/index.ts` の `createHonoServer()` 部分は以下のように定義することで、`/api` 配下へのリクエストが SPA としてフォールバックされず Hono エンドポイントに到達するようにした。
+
+```typescript
+export const app = new Hono<{ Bindings: HonoBindings; }>();
+app.route(apiPath, api);
+export default await createHonoServer({ app });
+```
+
+`server/routes/api/api.ts` に以下を記すことで CORS ヘッダを付与した。
+
+```typescript
+api.use('*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization']
+}));
+```
+
+「メインスクリプト」となる `scripts/ytf.js` を `$ npm run build` 後に `build/client/ytf.js` へと配置してデプロイすることで、ブックマークレットから読み込めるようにした。
+
+PC Brave、iPhone Safari、iPhone Brave ブラウザにて、`www.youtube.com` および `m.youtube.com` 上で以下のブックマークレットを実行することで、「メインスクリプト」を読み込んで実行できることを確認した。
+
+```javascript
+javascript:(async () => {
+  const policy = trustedTypes.createPolicy('neos-ytf', { createScript : code => code });
+  const code = await fetch('https://ytf.neos21.workers.dev/ytf.js').then(res => res.text());
+  eval(policy.createScript(code));
+})();
+```
+
+PC Brave の Tampermonkey で以下のように `@require` で指定することで、YouTube 読み込み時に「メインスクリプト」を読み込んで実行できることを確認した。
+
+```javascript
+// ==UserScript==
+// @name         Neo's YouTube Filter
+// @namespace    https://neos21.net/
+// @version      2026-09-22
+// @description  Neo's YouTube Filter
+// @author       Neos21
+// @match        https://www.youtube.com/*
+// @match        https://m.youtube.com/*
+// @require      https://ytf.neos21.workers.dev/ytf.js
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=youtube.com
+// @run-at       document-idle
+// ==/UserScript==
+```
+
+
 ## サンプルとしての機能
 
-サンプルコードには `example`・`examples` の命名・記載がある他、隅付き括弧を用いたプレースホルダを記載している。
+サンプルコードには `example`・`examples` の命名・記載がある他、隅付き括弧を用いたプレースホルダを記載している。以下は最終的に実コードから削除して良い。
 
-`/api/login` エンドポイントおよび `index.tsx` に、JWT を発行するログイン認証の簡易サンプルを付属している。簡単のため、クライアントでは LocalStorage に JWT を保管している点に留意。
-
-### 主な説明用サンプルファイル (実コードからは削除して良い)
-
-- `server/repositories/examples-repository.ts`
+- `server/repositories/examples-repository.txt`
 - `server/routes/api/examples/`
 - `shared/schemas/example-schema.ts`
-- `shared/services/example-service.ts`
-- `shared/types/app/example-display.ts`
-- `shared/types/entities/example.ts`
-
-### 実コード作成時に用意する必要があるファイル
-
-- `.dev.vars` (`.dev.vars.example` を参考に `hono-bindings.ts` と揃うように作成する)
 
 
 ## 技術スタック
@@ -44,6 +137,7 @@ YouTube の見たくない動画を非表示にする仕組み。
 
 ```bash
 $ npm install
+# `.dev.vars.example` を参考に `.dev.vars` を用意する
 $ npm run dev
 ```
 

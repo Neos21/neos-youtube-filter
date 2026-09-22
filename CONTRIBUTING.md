@@ -19,6 +19,7 @@
 ```bash
 # 初期インストール
 $ npm install
+# `.dev.vars.example` を参考に `.dev.vars` を用意する
 
 # 開発サーバを起動する
 $ npm run dev
