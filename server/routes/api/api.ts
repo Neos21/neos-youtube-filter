@@ -4,6 +4,7 @@ import { cors } from 'hono/cors';
 import { blockedChannels, blockedChannelsPath } from './blocked-channels/blocked-channels';
 import { blockedPatterns, blockedPatternsPath } from './blocked-patterns/blocked-patterns';
 import { blockedVideos, blockedVideosPath } from './blocked-videos/blocked-videos';
+import { filterRules, filterRulesPath } from './filter-rules/filter-rules';
 import { login, loginPath } from './login/login';
 import { subscribedChannels, subscribedChannelsPath } from './subscribed-channels/subscribed-channels';
 import { httpStatusCode } from '../../../shared/constants/http-status-code';
@@ -38,6 +39,7 @@ api.route(blockedVideosPath     , blockedVideos);
 api.route(blockedChannelsPath   , blockedChannels);
 api.route(blockedPatternsPath   , blockedPatterns);
 api.route(subscribedChannelsPath, subscribedChannels);
+api.route(filterRulesPath       , filterRules);
 
 // TODO : テスト用・後で消す
 api.get('/test', context => {

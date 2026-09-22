@@ -101,11 +101,14 @@
     - 完了記録 (2026-09-22) : `SubscribedChannelsRepository` と `/api/subscribed-channels` の GET・POST・PATCH・PUT・DELETE を実装した。非表示チャンネルと同じ正規化・更新方式を採用し、購読用 Schema は同テーブルのファイル内に独立して定義した
     - 更新契約 : POST は INSERT、PATCH は UPDATE、PUT は一意制約による UPSERT とし、各書き込みは RETURNING 付きの1クエリで全カラムを返す。PATCH・PUT の更新句は buildUpdateQuery で構築する。省略項目は保持、明示 null はクリアし、空 PATCH は拒否する。識別子消失・競合は DB 制約に任せ、事前 SELECT と既存値統合用 Resolver は使用しない
     - 検証結果 : Lint・ビルド成功。メモリ上の SQLite による33件の API 確認で CRUD・UPSERT、URL 正規化、識別子補完、保持・クリア、重複・競合、不正入力、404・認証、登録日時の保持、単一クエリ、ブロック情報の独立性を確認した。SQL 例外の応答は既存 Controller と同じ Hono 標準の 500 に従う。D1 操作・マイグレーションは不要
-- [ ] 09. メインスクリプト向けフィルター情報取得 API を実装する
+- [x] 09. メインスクリプト向けフィルター情報取得 API を実装する
     - 対象 : `server/repositories/`、`server/routes/api/`、応答用の共有型
     - 4テーブルをまとめる Read Model を固定 Bearer トークンで取得できるようにする。Service クラスを作らない最新方針に従い、集約処理の配置は着手時に具体化する
     - メインスクリプトが必要とする識別子・パターン・フラグ等を返し、取得失敗を正常な空リストとして返さない
     - 完了条件 : 4種類が揃った場合・全件空・DB エラー・認証エラーを確認し、応答契約を記録する
+    - 完了記録 (2026-09-22) : `GET /api/filter-rules` を実装した。Controller で既存4 Repository の findAll を並列に呼び、既存の共有型 FilterRules にまとめて返す。Service・SQL・共有型の追加は不要
+    - 応答契約 : `{ result: { blocked_videos, blocked_channels, blocked_patterns, subscribed_channels } }` を 200 で返す。各配列は全カラムを含む id 昇順のレコードとし、登録なしは空配列とする。いずれかの取得失敗時は部分結果や空配列を返さず、既存 Controller と同じ Hono 標準の 500 応答に従う。共通の固定 Bearer 認証・CORS を適用する
+    - 検証結果 : Lint・ビルド成功。メモリ上の SQLite と取得失敗の模擬を使った12ケースで、全件空・4種類の全カラムと並び順・各テーブルの取得失敗・認証不備・認証設定不足・YouTube 両ドメインの CORS を確認した。D1 操作・マイグレーションは不要
 
 ### 3. 管理 SPA
 
