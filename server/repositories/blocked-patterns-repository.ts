@@ -15,7 +15,7 @@ export class BlockedPatternsRepository {
   
   /** 1件取得する・存在しない場合は `null` を返す */
   public async findById(id: number): Promise<BlockedPattern | null> {
-    return await this.db.prepare('SELECT id, type, pattern, flags, created_at FROM blocked_patterns WHERE id = ?').bind(id).first<BlockedPattern>();
+    return await this.db.prepare('SELECT id, type, pattern, flags, created_at FROM blocked_patterns WHERE id = ? LIMIT 1').bind(id).first<BlockedPattern>();
   }
   
   /** 1件追加する・登録結果を `RETURNING` で取得し返す */

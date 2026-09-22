@@ -15,7 +15,7 @@ export class BlockedChannelsRepository {
   
   /** 1件取得する・存在しない場合は `null` を返す */
   public async findById(id: number): Promise<BlockedChannel | null> {
-    return await this.db.prepare('SELECT id, handle, channel_id, title, created_at FROM blocked_channels WHERE id = ?').bind(id).first<BlockedChannel>();
+    return await this.db.prepare('SELECT id, handle, channel_id, title, created_at FROM blocked_channels WHERE id = ? LIMIT 1').bind(id).first<BlockedChannel>();
   }
   
   /** 1件追加する・登録結果を `RETURNING` で取得し返す */

@@ -15,7 +15,7 @@ export class BlockedVideosRepository {
   
   /** 1件取得する・存在しない場合は `null` を返す */
   public async findById(id: number): Promise<BlockedVideo | null> {
-    return await this.db.prepare('SELECT id, video_id, title, created_at FROM blocked_videos WHERE id = ?').bind(id).first<BlockedVideo>();
+    return await this.db.prepare('SELECT id, video_id, title, created_at FROM blocked_videos WHERE id = ? LIMIT 1').bind(id).first<BlockedVideo>();
   }
   
   /** 1件追加する・登録結果を `RETURNING` で取得し返す */

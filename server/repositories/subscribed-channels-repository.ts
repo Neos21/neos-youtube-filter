@@ -15,7 +15,7 @@ export class SubscribedChannelsRepository {
   
   /** 1件取得する・存在しない場合は `null` を返す */
   public async findById(id: number): Promise<SubscribedChannel | null> {
-    return await this.db.prepare('SELECT id, handle, channel_id, title, created_at FROM subscribed_channels WHERE id = ?').bind(id).first<SubscribedChannel>();
+    return await this.db.prepare('SELECT id, handle, channel_id, title, created_at FROM subscribed_channels WHERE id = ? LIMIT 1').bind(id).first<SubscribedChannel>();
   }
   
   /** 1件追加する・登録結果を `RETURNING` で取得し返す */
