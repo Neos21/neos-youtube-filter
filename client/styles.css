@@ -24,3 +24,13 @@ body {
 .modal-box {
   max-height: calc(100svh - 1rem);
 }
+
+/* daisyUI のテーブルを調整する */
+.table {
+  & thead :is(th, td) {
+    @apply whitespace-nowrap;
+  }
+  & tbody :is(th, td) {
+    @apply align-top;
+  }
+}
