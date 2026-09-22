@@ -6,6 +6,7 @@ export default [
   layout('./layouts/admin-layout.tsx', [
     route('/home'            , './pages/home/home.tsx'),
     route('/blocked-videos'  , './pages/blocked-videos/blocked-videos.tsx'),
-    route('/blocked-channels', './pages/blocked-channels/blocked-channels.tsx')
+    route('/blocked-channels', './pages/blocked-channels/blocked-channels.tsx'),
+    route('/blocked-patterns', './pages/blocked-patterns/blocked-patterns.tsx')
   ])
 ] satisfies RouteConfig;

@@ -15,7 +15,8 @@ export default function AdminLayout(): ReactElement {
   const menuItems = [
     { to: '/home'            , label: 'ホーム'           },
     { to: '/blocked-videos'  , label: '非表示動画'       },
-    { to: '/blocked-channels', label: '非表示チャンネル' }
+    { to: '/blocked-channels', label: '非表示チャンネル' },
+    { to: '/blocked-patterns', label: '非表示パターン'   }
   ];
   
   /** サイドメニューを開閉する */

@@ -229,17 +229,17 @@ export default function BlockedChannels(): ReactElement {
               
               <fieldset className="fieldset">
                 <label className="fieldset-label">ハンドルまたは YouTube URL</label>
-                <input className="input w-full" value={createHandle} onChange={event => setCreateHandle(event.target.value)} disabled={isSubmitting} />
+                <input type="text" className="input w-full" value={createHandle} onChange={event => setCreateHandle(event.target.value)} disabled={isSubmitting} />
               </fieldset>
               
               <fieldset className="fieldset">
                 <label className="fieldset-label">チャンネル ID または YouTube URL</label>
-                <input className="input w-full" value={createChannelId} onChange={event => setCreateChannelId(event.target.value)} disabled={isSubmitting} />
+                <input type="text" className="input w-full" value={createChannelId} onChange={event => setCreateChannelId(event.target.value)} disabled={isSubmitting} />
               </fieldset>
               
               <fieldset className="fieldset">
                 <label className="fieldset-label">チャンネル名 (任意)</label>
-                <input className="input w-full" value={createTitle} onChange={event => setCreateTitle(event.target.value)} disabled={isSubmitting} />
+                <input type="text" className="input w-full" value={createTitle} onChange={event => setCreateTitle(event.target.value)} disabled={isSubmitting} />
               </fieldset>
               
               {!isEmpty(createError) && (
@@ -272,17 +272,17 @@ export default function BlockedChannels(): ReactElement {
               
               <fieldset className="fieldset">
                 <label className="fieldset-label">ハンドルまたは YouTube URL</label>
-                <input className="input w-full" value={editHandle} onChange={event => setEditHandle(event.target.value)} disabled={isSubmitting} />
+                <input type="text" className="input w-full" value={editHandle} onChange={event => setEditHandle(event.target.value)} disabled={isSubmitting} />
               </fieldset>
               
               <fieldset className="fieldset">
                 <label className="fieldset-label">チャンネル ID または YouTube URL</label>
-                <input className="input w-full" value={editChannelId} onChange={event => setEditChannelId(event.target.value)} disabled={isSubmitting} />
+                <input type="text" className="input w-full" value={editChannelId} onChange={event => setEditChannelId(event.target.value)} disabled={isSubmitting} />
               </fieldset>
               
               <fieldset className="fieldset" disabled={isSubmitting}>
                 <label className="fieldset-label">チャンネル名 (任意)</label>
-                <input className="input w-full" value={editTitle} onChange={event => setEditTitle(event.target.value)} disabled={isSubmitting} />
+                <input type="text" className="input w-full" value={editTitle} onChange={event => setEditTitle(event.target.value)} disabled={isSubmitting} />
               </fieldset>
               
               {!isEmpty(editError) && (

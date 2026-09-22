@@ -210,12 +210,12 @@ export default function BlockedVideos(): ReactElement {
             <form onSubmit={onCreate}>
               <fieldset className="fieldset">
                 <label className="fieldset-label">動画 ID または YouTube URL</label>
-                <input className="input w-full" value={createVideoId} onChange={event => setCreateVideoId(event.target.value)} required disabled={isSubmitting} />
+                <input type="text" className="input w-full" value={createVideoId} onChange={event => setCreateVideoId(event.target.value)} required disabled={isSubmitting} />
               </fieldset>
               
               <fieldset className="fieldset">
                 <label className="fieldset-label">動画タイトル (任意)</label>
-                <input className="input w-full" value={createTitle} onChange={event => setCreateTitle(event.target.value)} disabled={isSubmitting} />
+                <input type="text" className="input w-full" value={createTitle} onChange={event => setCreateTitle(event.target.value)} disabled={isSubmitting} />
               </fieldset>
               
               {!isEmpty(createError) && (
@@ -248,7 +248,7 @@ export default function BlockedVideos(): ReactElement {
               
               <fieldset className="fieldset" disabled={isSubmitting}>
                 <label className="fieldset-label">動画タイトル (任意)</label>
-                <input className="input w-full" value={editTitle} onChange={event => setEditTitle(event.target.value)} disabled={isSubmitting} />
+                <input type="text" className="input w-full" value={editTitle} onChange={event => setEditTitle(event.target.value)} disabled={isSubmitting} />
               </fieldset>
               
               {!isEmpty(editError) && (
