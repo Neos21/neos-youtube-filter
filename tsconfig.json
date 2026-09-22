@@ -1,0 +1,45 @@
+// TypeScript 設定 : `$ npx tsc` で型チェックを行ってエラーが出なければ問題なし
+{
+  // 型チェック対象とするファイルを指定する
+  "include": [
+    // 基本的には全ファイルを指定する
+    "**/*",
+    // React Router が出力する型ファイルも対象にする
+    ".react-router/types/**/*"
+  ],
+  "compilerOptions": {
+    // コンパイル時に使用する標準ライブラリを指定する
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    // 自動で読み込む型定義を指定する : `vite/client` は `import.meta.env` などに対応する
+    "types": [
+      "node",
+      "vite/client",
+      "./worker-configuration.d.ts"
+    ],
+    // 出力する JavaScript のバージョンを指定する
+    "target": "ES2022",
+    // 出力するモジュール形式を指定する : `ESNext` とすると ESModules (`import`・`export`) をそのまま使う
+    "module": "ESNext",
+    // モジュールの解決方法を指定する : `Bundler` とすると Vite バンドラ前提での解決とする
+    "moduleResolution": "Bundler",
+    // JSX の変換方法を指定する : `react-jsx` とすると React v17 以降の JSX 変換となり `import React` が必要なくなる
+    "jsx": "react-jsx",
+    // 仮想的に同じルートにあるとみなすディレクトリを指定する : `import` の補完に役立つ
+    "rootDirs": [
+      ".",
+      "./.react-router/types"
+    ],
+    // CommonJS モジュールを ESModules として扱いやすくする
+    "esModuleInterop": true,
+    // `import`・`export` をそのまま残しバンドラに任せる
+    "verbatimModuleSyntax": true,
+    // `import` で JSON ファイルをインポートできるようにする
+    "resolveJsonModule": true,
+    // `.d.ts` ファイルのチェックをスキップする
+    "skipLibCheck": true,
+    // 厳密な型チェックを行う
+    "strict": true,
+    // TypeScript (`tsc`) による出力ファイルを生成しない
+    "noEmit": true
+  }
+}

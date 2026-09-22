@@ -1,0 +1,15 @@
+// VSCode 用設定
+{
+  // 検索から除外するディレクトリ・ファイルを指定する
+  "search.exclude": {
+    "**/.react-router": true,
+    "**/.wrangler": true,
+    "**/build": true,
+    "**/coverage": true,
+    "**/node_modules": true,
+    
+    "**/worker-configuration.d.ts": true
+  },
+  // TS サーバの動作不良のために指定しておく (`tsconfig.json` の `compilerOptions.types` でも明示的に型が認識できるようにしておく)
+  "js/ts.tsdk.path": "node_modules/typescript/lib"
+}

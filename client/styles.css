@@ -1,0 +1,26 @@
+/* TailwindCSS を使用する */
+@import "tailwindcss";
+
+/* daisyUI を使用する */
+@plugin "daisyui";
+
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", Meiryo, sans-serif, "Apple Color Emoji", "Noto Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --font-mono: "Noto Sans Mono CJK JP", Osaka-mono, "MS Gothic", Menlo, Consolas, Courier, "Courier New"                                                                      , monospace , "Apple Color Emoji", "Noto Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+/* `@layer base` 内に入れると daisyUI の設定に負けるので入れないでおく */
+html {
+  @apply h-full break-all cursor-default scrollbar-gutter-stable;
+  
+  text-decoration-skip-ink: none;
+}
+
+body {
+  @apply h-full;
+}
+
+/* daisyUI のモーダルの不具合修正 : iPhone Safari などモバイルブラウザでモーダルが画面上下にはみ出てしまう場合がある・操作バーを除いた表示領域内にモーダルを収めるよう調整する */
+.modal-box {
+  max-height: calc(100svh - 1rem);
+}

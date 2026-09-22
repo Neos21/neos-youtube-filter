@@ -1,0 +1,50 @@
+// Cloudflare Workers 設定
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // `https://【NAME】.【サブドメイン】.workers.dev` でデプロイされるようになる
+  "name": "ytf",
+  // 指定できる日付は https://developers.cloudflare.com/workers/configuration/compatibility-flags/ に記載あり
+  "compatibility_date": "2026-09-08",
+  // アカウント ID
+  "account_id": "【Account ID】",
+  // Hono サーバのエントリポイント
+  "main": "./server/index.ts",
+  // 静的資産の取り扱いに関する定義 https://developers.cloudflare.com/workers/static-assets/binding/
+  "assets": {
+    // ビルド後のクライアント資材 (`index.html` など) があるディレクトリを指定する
+    "directory": "./build/client",
+    // 見つからないパスは `index.html` を返す `single-page-application` モードを指定する https://developers.cloudflare.com/workers/static-assets/routing/single-page-application/
+    "not_found_handling": "single-page-application"
+  },
+  // D1 連携
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "example",
+      "database_id": "【Database ID】"
+    }
+  ],
+  // `https://【NAME】.【サブドメイン】.workers.dev` URL を公開する
+  "workers_dev": true,
+  // プレビュー URL を無効にする
+  "preview_urls": false,
+  // ログ設定
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true
+    }
+  },
+  // リクエストに最も近いデータセンターを自動的に利用する設定
+  "placement": {
+    "mode": "smart"
+  }
+}

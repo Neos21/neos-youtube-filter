@@ -1,0 +1,21 @@
+# システムファイル
+.DS_Store
+Thumbs.db
+
+# Cloudflare Workers シークレットの開発環境用ファイル
+.dev.vars
+# 差分ビルドを記録するファイル
+tsconfig.tsbuildinfo
+# 任意の SQL を流したくなった時に使う一時ファイルの想定
+schema.sql
+
+# npm
+node_modules/
+# React Router の定義ファイルが出力される
+.react-router/
+# Wrangler CLI による開発環境用のファイルが出力される
+.wrangler/
+# ビルド済資材
+build/
+# ユニットテストのコードカバレッジ
+coverage/

@@ -1,0 +1,13 @@
+{
+  "name": "Example",
+  "short_name": "Example",
+  "lang": "ja",
+  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "https://【NAME】.【サブドメイン】.workers.dev",
+  "icons": [
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512" }
+  ]
+}
