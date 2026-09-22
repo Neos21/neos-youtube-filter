@@ -1,11 +1,11 @@
-(async () => {
+(async (): Promise<void> => {
   console.log('読み込めました');
   alert('読み込めました');
   
-  const apiOrigin = 'https://ytf.neos21.workers.dev';
+  const apiOrigin = 'https://ytf.neos21.workers.dev/api';
   
   try {
-    const response = await fetch(`${apiOrigin}/api/test`);
+    const response = await fetch(`${apiOrigin}/test`);
     const text = await response.text();
     console.log(text);
     alert(text);
@@ -16,7 +16,7 @@
   }
   
   try {
-    const response = await fetch(`${apiOrigin}/api/test`, { method: 'POST' });
+    const response = await fetch(`${apiOrigin}/test`, { method: 'POST' });
     const text = await response.text();
     console.log(text);
     alert(text);

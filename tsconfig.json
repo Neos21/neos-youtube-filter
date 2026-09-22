@@ -7,6 +7,15 @@
     // React Router が出力する型ファイルも対象にする
     ".react-router/types/**/*"
   ],
+  // 型チェック対象外とするファイルを指定する
+  "exclude": [
+    // npm パッケージ
+    "node_modules",
+    // ビルド済資材
+    "build",
+    // メインスクリプトは `scripts/tsconfig.json `で独立して型チェックする
+    "scripts"
+  ],
   "compilerOptions": {
     // コンパイル時に使用する標準ライブラリを指定する
     "lib": ["DOM", "DOM.Iterable", "ES2022"],

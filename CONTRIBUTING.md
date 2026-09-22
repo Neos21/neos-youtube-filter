@@ -30,9 +30,16 @@ $ npm run lint
 # ビルドする
 $ npm run build
 
+# メインスクリプトだけを型チェック・Bundle・Minify する
+$ npm run build:ytf
+
 # ビルド後にプレビューサーバを起動する
 $ npm run preview
 ```
+
+`$ npm run build:ytf` は `scripts/ytf.ts` を入口に、`build/client/ytf.js` を単一の IIFE として生成する。アプリの型生成や Vite ビルド、環境変数ファイルは不要。構文変換の対象は Safari 16・Chrome 110 とし、ブラウザ API の Polyfill は追加しない。
+
+`$ npm run build` と `$ npm run build-only` は、アプリのビルド後にメインスクリプトを生成する。プレビュー・デプロイでは既存の静的資産設定と `public/_headers` により `/ytf.js` を配信する。
 
 変更完了時は次を実行する。
 

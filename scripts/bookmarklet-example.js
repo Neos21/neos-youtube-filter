@@ -1,3 +1,4 @@
+// ブックマークレットのサンプル
 (async () => {
   try {
     const policy = trustedTypes.createPolicy('neos21-ytf', { createScript: code => code });

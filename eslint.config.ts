@@ -85,6 +85,12 @@ export default defineConfig([
     }
   },
   
+  // 導入用 JavaScript の例はメインスクリプトの TypeScript プロジェクトに含めない
+  {
+    files: ['scripts/**/*.js'],
+    languageOptions: { parserOptions: { project: false } }
+  },
+  
   // 検証しない除外ディレクトリ・ファイル
   {
     ignores: [
