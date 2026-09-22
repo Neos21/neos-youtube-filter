@@ -1,5 +1,3 @@
-// Example : React Router によりこのファイル名であることが必要
-
 import { type ReactElement, type ReactNode, useEffect } from 'react';
 import { isRouteErrorResponse, Link, Links, Outlet, Scripts, ScrollRestoration, useLocation, useNavigate } from 'react-router';
 
@@ -43,26 +41,26 @@ export function Layout({ children }: { children: ReactNode }): ReactElement {
     <html lang="ja">
       <head>
         <meta charSet="UTF-8" />
-        <title>Example</title>
+        <title>Neo's YouTube Filter</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#000000" />
-        <meta name="description" content="Example" />
-        <meta name="keywords" content="Example" />
-        <meta name="robots" content="index, follow" />
+        <meta name="description" content="Neo's YouTube Filter" />
+        <meta name="keywords" content="Neo's YouTube Filter" />
+        <meta name="robots" content="noindex, nofollow" />
         
         <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="Example" />
-        <meta property="og:title" content="Example" />
-        <meta property="og:description" content="Example" />
-        <meta property="og:url" content="https://【NAME】.【サブドメイン】.workers.dev" />
-        <meta property="og:image" content="https://【NAME】.【サブドメイン】.workers.dev/icon-512.png" />
+        <meta property="og:site_name" content="Neo's YouTube Filter" />
+        <meta property="og:title" content="Neo's YouTube Filter" />
+        <meta property="og:description" content="Neo's YouTube Filter" />
+        <meta property="og:url" content="https://ytf.neos21.workers.dev" />
+        <meta property="og:image" content="https://ytf.neos21.workers.dev/icon-512.png" />
         <meta property="og:locale" content="ja_JP" />
         
         <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:title" content="Example" />
-        <meta property="twitter:description" content="Example" />
-        <meta property="twitter:url" content="https://【NAME】.【サブドメイン】.workers.dev" />
-        <meta property="twitter:image" content="https://【NAME】.【サブドメイン】.workers.dev/icon-512.png" />
+        <meta property="twitter:title" content="Neo's YouTube Filter" />
+        <meta property="twitter:description" content="Neo's YouTube Filter" />
+        <meta property="twitter:url" content="https://ytf.neos21.workers.dev" />
+        <meta property="twitter:image" content="https://ytf.neos21.workers.dev/icon-512.png" />
         
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

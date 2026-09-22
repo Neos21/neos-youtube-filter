@@ -57,30 +57,30 @@ D1 の作成、SQL 実行、マイグレーションは開発者が手動で行�
 
 ```bash
 # D1 データベースを作成する
-$ wrangler d1 create example
+$ wrangler d1 create ytf
 
 # テーブルを確認するコマンド例
-$ wrangler d1 execute example --local  --command='SELECT * FROM 【テーブル名】'
-$ wrangler d1 execute example --remote --command='SELECT * FROM 【テーブル名】'
+$ wrangler d1 execute ytf --local  --command='SELECT * FROM 【テーブル名】'
+$ wrangler d1 execute ytf --remote --command='SELECT * FROM 【テーブル名】'
 
 # 任意の SQL ファイルを実行するコマンド例
-$ wrangler d1 execute example --local  --file='./schema.sql'
-$ wrangler d1 execute example --remote --file='./schema.sql'
+$ wrangler d1 execute ytf --local  --file='./schema.sql'
+$ wrangler d1 execute ytf --remote --file='./schema.sql'
 
 # マイグレーション用 SQL を実行するコマンド例
-$ wrangler d1 execute example --local  --file='./migrations/create-tables.sql'
-$ wrangler d1 execute example --local  --file='./migrations/drop-tables.sql'
-$ wrangler d1 execute example --remote --file='./migrations/create-tables.sql'
-$ wrangler d1 execute example --remote --file='./migrations/drop-tables.sql'
+$ wrangler d1 execute ytf --local  --file='./migrations/create-tables.sql'
+$ wrangler d1 execute ytf --local  --file='./migrations/drop-tables.sql'
+$ wrangler d1 execute ytf --remote --file='./migrations/create-tables.sql'
+$ wrangler d1 execute ytf --remote --file='./migrations/drop-tables.sql'
 
 # テーブル・インデックス一覧を出力するコマンド例
-$ wrangler d1 execute example --local  --command='SELECT * FROM sqlite_master WHERE type = '\''table'\'''
-$ wrangler d1 execute example --local  --command='SELECT * FROM sqlite_master WHERE type = '\''index'\'''
-$ wrangler d1 execute example --remote --command='SELECT * FROM sqlite_master WHERE type = '\''table'\'''
-$ wrangler d1 execute example --remote --command='SELECT * FROM sqlite_master WHERE type = '\''index'\'''
+$ wrangler d1 execute ytf --local  --command='SELECT * FROM sqlite_master WHERE type = '\''table'\'''
+$ wrangler d1 execute ytf --local  --command='SELECT * FROM sqlite_master WHERE type = '\''index'\'''
+$ wrangler d1 execute ytf --remote --command='SELECT * FROM sqlite_master WHERE type = '\''table'\'''
+$ wrangler d1 execute ytf --remote --command='SELECT * FROM sqlite_master WHERE type = '\''index'\'''
 
 # リモートのデータをバックアップとして取得するコマンド例
-$ wrangler d1 execute example --remote --command='SELECT * FROM examples' --json | jq --compact-output '.[].results[]' > ./migrations/backup.jsonl
+$ wrangler d1 execute ytf --remote --command='SELECT * FROM 【テーブル名】' --json | jq --compact-output '.[].results[]' > ./migrations/backup.jsonl
 ```
 
 
@@ -91,6 +91,6 @@ $ wrangler d1 execute example --remote --command='SELECT * FROM examples' --json
 - 本番シークレットの登録は開発者が手動で行い、AI エージェントは実行しない
 
 ```bash
-$ echo 'EXAMPLE_VALUE' | wrangler secret put ADMIN_PASSWORD   --name example
-$ echo 'EXAMPLE_VALUE' | wrangler secret put ADMIN_JWT_SECRET --name example
+$ echo 'EXAMPLE_VALUE' | wrangler secret put ADMIN_PASSWORD   --name ytf
+$ echo 'EXAMPLE_VALUE' | wrangler secret put ADMIN_JWT_SECRET --name ytf
 ```

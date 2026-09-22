@@ -45,7 +45,7 @@ export default function AdminLayout(): ReactElement {
               </svg>
             </label>
           </div>
-          <Link to="/home" className="ml-2 flex-1 text-lg font-bold">Example</Link>
+          <Link to="/home" className="ml-2 flex-1 text-lg font-bold">Neo's YouTube Filter</Link>
         </header>
         
         {/* コンテンツ部分 */}
@@ -60,7 +60,7 @@ export default function AdminLayout(): ReactElement {
         
         {/* サイドメニュー */}
         <aside className="min-h-full w-72 border-r border-base-300 bg-base-200 px-3 pt-4 pb-8 text-base-content">
-          <div className="mb-6 text-xl font-bold">Example</div>
+          <div className="mb-6 text-xl font-bold">Neo's YouTube Filter</div>
           <nav className="mb-6">
             <ul className="menu w-full gap-2 p-0">
               {menuItems.map(item => {

@@ -1,11 +1,11 @@
 {
-  "name": "Example",
-  "short_name": "Example",
+  "name": "Neo's YouTube Filter",
+  "short_name": "Neo's YouTube Filter",
   "lang": "ja",
   "theme_color": "#000000",
   "background_color": "#ffffff",
   "display": "standalone",
-  "start_url": "https://【NAME】.【サブドメイン】.workers.dev",
+  "start_url": "https://ytf.neos21.workers.dev",
   "icons": [
     { "src": "icon-192.png", "type": "image/png", "sizes": "192x192" },
     { "src": "icon-512.png", "type": "image/png", "sizes": "512x512" }

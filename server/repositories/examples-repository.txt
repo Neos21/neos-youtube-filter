@@ -1,7 +1,5 @@
 import { buildUpdateQuery } from '../helpers/build-update-query';
 
-import type { Example } from '../../shared/types/entities/example';
-
 /** Example : `examples` テーブルの永続化操作を扱う Repository */
 export class ExamplesRepository {
   constructor(private readonly db: D1Database) { }

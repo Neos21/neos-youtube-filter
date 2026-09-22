@@ -1,0 +1,3 @@
+# スクリプトを YouTube 上から読み込めるようにするためオリジン許可を入れる
+/*
+  Access-Control-Allow-Origin: *

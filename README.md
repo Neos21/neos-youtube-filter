@@ -1,6 +1,6 @@
-# Boilerplate : React Router (SPA) + Hono + Cloudflare Workers
+# Neo's YouTube Filter
 
-React Router (SPA モード) + Hono + Cloudflare Workers プロジェクトのボイラープレート。
+YouTube の見たくない動画を非表示にする仕組み。
 
 
 ## サンプルとしての機能
@@ -21,11 +21,6 @@ React Router (SPA モード) + Hono + Cloudflare Workers プロジェクトの�
 ### 実コード作成時に用意する必要があるファイル
 
 - `.dev.vars` (`.dev.vars.example` を参考に `hono-bindings.ts` と揃うように作成する)
-- `public/favicon.ico`
-- `public/apple-touch-icon.png`
-- `public/icon-192.png`
-- `public/icon-512.png`
-    - 画像類は `public/manifest.webmanifest` と `root.tsx` でファイル名を参照している点に留意
 
 
 ## 技術スタック

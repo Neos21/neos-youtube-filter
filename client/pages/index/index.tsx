@@ -54,7 +54,7 @@ export default function Index(): ReactElement {
   return (
     <main className="px-3 py-4">
       {/* `main` 要素の余白は `admin-layout.tsx` の `Outlet` ラッパーと揃えておく */}
-      <h1>Example</h1>
+      <h1>Neo's YouTube Filter</h1>
       
       {shouldRequestRelogin && (
         <div className="mb-4 alert alert-soft alert-warning">再度ログインしてください</div>
