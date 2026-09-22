@@ -39,15 +39,15 @@
     - 開発者が確定した Shorts 対応 : ホーム・関連動画・検索結果内の Shorts カードも対象にする。`/shorts/動画ID` 等から動画 ID を抽出し、DOM からチャンネル識別子が確認できる場合はチャンネル単位でも扱う。Shorts 専用プレイヤーでは非表示・ボタン追加等を動かさない。別の拡張機能による通常動画ページへのリダイレクトは本プロジェクトでは実装しない
     - 認証の実装契約 : 共通の環境変数 `API_TOKEN` と Authorization の `Bearer` 値を照合する。両クライアントから同じ CRUD・情報取得 API を利用できる。`POST /api/login` は Bearer トークンの有効性確認として残し、成功時は `{ result: true }` を返す。管理画面は入力したトークンを確認成功後に既存 Store へ保存する。JWT の生成・検証・専用シークレット・パスワード照合は削除し、既存 JWT は再ログインで置き換える
     - トークン設定の実装契約 : 管理画面はトークン入力、メインスクリプトは初回入力と YouTube 側 LocalStorage への保存を基本とし、401 時に再設定できるようにする。公開される `/ytf.js` や URL にトークンを埋め込まない。認証設定不足は 500、未指定・不一致は 401、OPTIONS は認証を要求しない
-    - データ契約 : 各テーブルは整数の `id` を主キーにする。`video_id` は一意、チャンネルの `handle`・`channel_id` はそれぞれ NULL 許容かつテーブル内で一意とし、最低どちらか1つを必須とする。`title` は参考情報として NULL 許容とする。購読とブロックのテーブル間で一意性を共有しない
+    - データ契約 : 各テーブルは整数の `id` を主キーにする。`video_id` は一意かつ登録後は変更不可、チャンネルの `handle`・`channel_id` はそれぞれ NULL 許容かつテーブル内で一意とし、最低どちらか1つを必須とする。`title` は参考情報として NULL 許容とする。購読とブロックのテーブル間で一意性を共有しない
     - 識別子の入力契約 : 保存値は動画 ID・チャンネル ID・先頭 `@` 付きハンドルとし、管理画面では対応する YouTube URL からも抽出できるようにする。識別子の前後の空白を除去し、動画 ID・チャンネル ID の大小文字を保持する。ハンドルは先頭 `@` を補い、大小文字を同一視する照合用の小文字表現で保存する。URL のハンドルはパスをデコードする。取得不能な識別子は NULL とし、チャンネル名から推測しない
-    - 登録・紐付けの契約 : 同じ動画または既存のチャンネル識別子の再登録は既存レコードを返す。既存の非空タイトルを再登録だけで上書きしない。チャンネルの片方が一致し、もう片方が未登録なら確認済みの値を補完する。両識別子が別レコードに一致する場合や既存の非空識別子と矛盾する場合は 409 とし、自動結合・上書きを行わない。管理画面で明示的に編集・削除して解消する
+    - 登録・更新の契約 : POST は INSERT、PATCH は UPDATE、PUT は INSERT ... ON CONFLICT DO UPDATE を実行し、それぞれ RETURNING で全カラムを1クエリで返す。PATCH・PUT の更新句はカラム数にかかわらず buildUpdateQuery で構築する。PUT は動画を video_id、チャンネルを handle または channel_id の一意制約で照合し、省略項目は保持、明示 null はクリアする。id・created_at は更新しない。事前 SELECT・batch・割り込み対策は行わない
     - パターンの入力契約 : パターンは空文字を拒否し、意味を変える前後空白の除去をしない。正規表現とフラグの組み合わせを検証し、不正値は 400 とする。正規表現の連続評価では `lastIndex` をリセットする。フラグの対応範囲は対象ブラウザでの検証時に確認し、実行環境で構築できないキャッシュ内パターンはスキップしてエラーを通知する
-    - API 契約 : `/api/blocked-videos`・`/api/blocked-channels`・`/api/blocked-patterns`・`/api/subscribed-channels` に GET (一覧)・POST (登録)、各 `/:id` に GET・PATCH・DELETE を用意する。JSON のカラム名は DB と同じ snake_case とする。一覧は id 昇順の配列、取得・登録・更新は保存後のレコード、削除は true を `result` に格納する。新規作成は 201、既存登録・取得・更新・削除は 200。不正入力は 400、存在しない ID は 404、競合は 409、予期しない障害は 500 とし、エラーは `{ error: メッセージ }` とする
-    - 更新契約 : PATCH の未指定は保持、NULL 許容項目への明示 NULL はクリアとする。識別子が両方空になる更新は拒否する。主キーの編集と未知の入力項目を拒否し、更新後の値の組み合わせを検証する
+    - API 契約 : `/api/blocked-videos`・`/api/blocked-channels`・`/api/blocked-patterns`・`/api/subscribed-channels` に GET (一覧)・POST (登録)、各 `/:id` に GET・PATCH・DELETE を用意する。JSON のカラム名は DB と同じ snake_case とする。一覧は id 昇順の配列、取得・登録・更新は保存後のレコード、削除は true を `result` に格納する。POST 成功は 201、PUT は新規・更新とも 200、取得・更新・削除は 200。不正入力は 400、存在しない ID は 404、DB の登録・更新失敗は 500 とし、エラーは `{ error: メッセージ }` とする 動画・チャンネルは各コレクションパスに PUT を追加する
+    - 更新契約 : PATCH の未指定は保持、NULL 許容項目への明示 NULL はクリアとする。動画・チャンネルの空 PATCH は 400、存在しない ID は 404 とする。チャンネルの識別子が両方空になる更新や重複は DB 制約で拒否し、Controller が SQL エラーのメッセージをそのまま error に入れて 500 で返す。主キー・登録日時・未知の入力項目は Schema で拒否する
     - 取得 API 契約 : `GET /api/filter-rules` は `{ result: { blocked_videos: [...], blocked_channels: [...], blocked_patterns: [...], subscribed_channels: [...] } }` を返す。各配列は該当テーブルのレコードとし、取得失敗を空配列として扱わない
     - キャッシュ契約 : 保存形式に版と取得日時を持ち、起動時は有効な形式のキャッシュで表示を開始して API から再取得する。対象ページへの遷移時も再取得し、登録成功時はメモリとキャッシュへ即時反映する。通信失敗では既存キャッシュを利用し、401 は再設定を案内する。初回取得失敗・破損時は条件なしで表示を維持し、再試行できるようにする。定期ポーリングは初期実装に含めない
-    - 責務と State : Route は認証・入出力、Repository は単一テーブルの永続化、Service はチャンネル紐付けや4テーブルの Read Model、shared は型・Schema・共有処理を担当する。管理画面は認証を既存 Store、一覧・編集中入力・通信状態を必要な所有箇所で保持する。メインスクリプトは `window.__YTF__` 配下に初期化状態・条件・トグル・監視解除処理を保持する
+    - 責務と State : Controller は認証・入出力・Schema 検証・SQL エラー処理、Repository は SQL の実行、shared は型・Schema・共有処理を担当する。Service クラスは作らない。管理画面は認証を既存 Store、一覧・編集中入力・通信状態を必要な所有箇所で保持する。メインスクリプトは `window.__YTF__` 配下に初期化状態・条件・トグル・監視解除処理を保持する
     - 検証・引継ぎ : 今回は契約とタスクリストのみ変更し、実装・D1 操作は行わない。次は 02 の SQL 作成と開発者によるローカル適用。開発者から既存テーブル・保持すべき既存データともになしと確認済み
 - [x] 02. 4テーブルの D1 スキーマと開発者向けの適用手順を用意する
     - 対象 : `migrations/`、必要に応じて `CONTRIBUTING.md`
@@ -64,7 +64,7 @@
     - 識別子の入力検証・正規化、チャンネル識別子が両方空になる更新の拒否、正規表現とフラグの検証を用意する
     - 完了条件 : 01・02 と整合し、正常入力・不正入力・片方だけのチャンネル識別子・フラグ省略と空指定の結果を確認する
     - 完了記録 : `shared/types/entities/` に4テーブルの型 (DB が生成する `created_at` を含む)、`shared/types/app/` にフィルター情報と API 応答の型、`shared/schemas/` に作成・更新 Schema、`shared/services/normalize-youtube-identifier.ts` に URL・識別子の正規化を追加した
-    - 更新時の引継ぎ : PATCH は部分 Schema で検証してから、非表示チャンネルは `resolveBlockedChannelUpdate`、購読チャンネルは `resolveSubscribedChannelUpdate`、パターンは `resolveBlockedPatternUpdate` で既存値と統合して再検証する。識別子の全消去・種別切替・正規表現の組み合わせをこの段階で検証する。`id`・`created_at`・未知の項目は作成・更新入力で拒否する
+    - 更新時の引継ぎ : 動画・非表示チャンネルは PATCH の部分 Schema で入力を検証し、DB 制約で更新後の整合性を保証する。resolveBlockedChannelUpdate は廃止した。未着手の購読チャンネル・パターンの更新処理も、着手時に最新の Repository・Controller 方針へ合わせる。id・created_at・未知の項目は作成・更新入力で拒否する
     - 検証 : 差分チェック・Lint・型チェックを含むビルド成功。一時的な実行で通常動画・Shorts・短縮 URL・チャンネル URL・ハンドルの正規化、異なるホストと不正入力の拒否、PATCH の省略・NULL・空文字、正規表現の既定フラグ・明示空文字・不正値・種別切替を確認した。テストファイルの追加や D1 操作は行っていない
 
 ### 2. API
@@ -77,27 +77,27 @@
     - 完了記録 : API 共通 Middleware で `API_TOKEN` と Bearer トークンを照合し、CORS を認証より先に適用した。`POST /api/login` は `{ result: true }` を返す確認用 API とし、管理画面は入力した固定トークンを保存する。JWT 発行処理・旧 Binding・サンプルの JWT 認証を削除し、既存 Store の保存形式を更新して旧認証情報をクリアする
     - 検証 : Lint・型チェックを含むビルド成功。Hono のリクエスト実行で未指定・不一致・正常トークン・設定不足・両 YouTube ドメインの OPTIONS とエラー応答の CORS を確認した。クライアントは模擬 LocalStorage・通信で旧情報の破棄、固定トークン保存・復元、Authorization 付与、401 時のログアウトを確認した
     - 手動確認 : 開発者が `.dev.vars` に `API_TOKEN` を設定して開発サーバを再起動し、同じ値で画面ログインを確認する。実ブラウザでの操作と本番シークレット登録・デプロイは未実施。詳細文書の追加は後回しとし、既存の認証説明と設定例のみ更新した
-- [ ] 05. 非表示動画の Repository と CRUD API を実装する
-    - 対象 : `server/repositories/`、`server/routes/api/`、`shared/` の契約
-    - `blocked_videos` の一覧・追加・編集・削除を用意し、動画 ID の重複登録と存在しない ID の扱いを統一する
-    - 単一テーブルの永続化は Repository、HTTP 入出力・認証・入力検証は Route に置く
-    - 完了条件 : 認証付き CRUD、タイトル更新、重複、不正入力、存在しない ID をローカルで確認する
-- [ ] 06. 非表示チャンネルの Repository・識別子の紐付け処理・CRUD API を実装する
-    - 対象 : `server/repositories/`、`server/services/`、`server/routes/api/`
-    - `blocked_channels` をハンドルだけ・チャンネル ID だけ・両方で登録できるようにする
-    - 01 の契約に従い、同一チャンネルと確認できた場合の識別子補完と、既存レコード同士の競合を扱う。複合的なユースケースは Service に置く
-    - 完了条件 : CRUD、片方から両方への補完、重複・競合、識別子の全消去を確認し、誤ったチャンネル同士を結合しない
+- [x] 05. 非表示動画の Repository と CRUD・UPSERT API を実装する
+    - 対象 : `server/repositories/blocked-videos-repository.ts`、`server/routes/api/blocked-videos/`、`shared/schemas/blocked-video-schema.ts`
+    - 完了記録 : GET 一覧・1件、POST、PATCH、PUT、DELETE を実装済み。POST は INSERT のみ、PATCH は title だけを UPDATE、PUT は video_id を照合キーに UPSERT する。書き込みは各1クエリの RETURNING で全カラムを返す
+    - レビュー反映 : Repository は SQL 実行と結果返却のみとし、例外は Controller の try/catch でエラーレスポンスに変換する。Repository の Result 型と事前 SELECT を廃止し、更新句は常に buildUpdateQuery を使う。video_id は登録後変更不可とし、PATCH に含まれた場合は 400 を返す
+    - 検証 : Lint・ビルド成功。一時 SQLite を使った Hono リクエスト実行で全 CRUD・PUT、各書き込みのクエリ数が1回であること、全カラムの返却、重複 INSERT の失敗、省略と null、登録日時保持、認証・404・SQL エラー返却を確認した。実 D1 の操作は行っていない
+- [x] 06. 非表示チャンネルの Repository と CRUD・UPSERT API を実装する
+    - 対象 : `server/repositories/blocked-channels-repository.ts`、`server/routes/api/blocked-channels/`、`shared/schemas/blocked-channel-schema.ts`
+    - 完了記録 : GET 一覧・1件、POST、PATCH、PUT、DELETE を実装済み。ハンドルだけ・チャンネル ID だけ・両方で登録できる。PUT は handle または channel_id の一意制約で照合し、省略項目は保持、明示 null はクリアする
+    - レビュー反映 : Service と resolveBlockedChannelUpdate を削除した。Repository は INSERT・UPDATE・UPSERT を各1クエリの RETURNING で実行し、PATCH・PUT の更新句は buildUpdateQuery で構築する。事前 SELECT・batch・割り込み対策・onError は使わず、Controller が SQL エラーをそのまま error メッセージとして返す
+    - 検証 : Lint・ビルド成功。一時 SQLite で CRUD・PUT、各書き込みの1クエリ完結、全カラムの返却、省略項目保持、null クリア、登録日時保持、別レコードへ一致する識別子の競合、識別子の全消去時の CHECK エラー、認証・404・SQL エラー返却を確認した。D1 操作・スキーマ変更は不要
 - [ ] 07. 非表示パターンの Repository と CRUD API を実装する
     - 対象 : `server/repositories/`、`server/routes/api/`
     - `blocked_patterns` の文字列・正規表現・フラグを保存し、作成時と更新後の組み合わせを検証する
     - 完了条件 : CRUD、型の切替、既定フラグ `iu`、明示フラグ、不正パターン・フラグの拒否を確認する
 - [ ] 08. 購読チャンネルの Repository と CRUD API を実装する
-    - 対象 : `server/repositories/`、`server/services/`、`server/routes/api/`
+    - 対象 : `server/repositories/`、`server/routes/api/`
     - `subscribed_channels` をブロックとは別リソースとして管理し、06 で確定した識別子の正規化・紐付け規則を再利用する
     - 完了条件 : CRUD、識別子補完、重複・競合を確認し、同じチャンネルのブロック情報を変更しない
 - [ ] 09. メインスクリプト向けフィルター情報取得 API を実装する
-    - 対象 : `server/services/`、`server/routes/api/`、応答用の共有型
-    - 4テーブルをまとめる Read Model を用途の分かる Service に置き、固定 Bearer トークンで取得できるようにする
+    - 対象 : `server/repositories/`、`server/routes/api/`、応答用の共有型
+    - 4テーブルをまとめる Read Model を固定 Bearer トークンで取得できるようにする。Service クラスを作らない最新方針に従い、集約処理の配置は着手時に具体化する
     - メインスクリプトが必要とする識別子・パターン・フラグ等を返し、取得失敗を正常な空リストとして返さない
     - 完了条件 : 4種類が揃った場合・全件空・DB エラー・認証エラーを確認し、応答契約を記録する
 

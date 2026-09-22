@@ -27,8 +27,12 @@ export const createBlockedVideoSchema = z.strictObject({
  * 省略項目は出力にも補完せず、呼び出し側は `undefined` の項目を更新対象から除外する
  * 登録後の `video_id` は変更不可とし、同じ値であっても入力を拒否する
  * `id`・`created_at`・その他未定義の項目も受け付けない
+ * 空の PATCH は更新する項目がないため拒否する
  */
-export const updateBlockedVideoSchema = createBlockedVideoSchema.pick({ title: true }).partial();
+export const updateBlockedVideoSchema = createBlockedVideoSchema.pick({ title: true }).partial().refine(
+  value => value.title !== undefined,
+  { message: '更新する項目を指定してください' }
+);
 
 /**
  * 登録 Schema の検証・整形後の入力型
@@ -43,3 +47,17 @@ export type CreateBlockedVideo = z.output<typeof createBlockedVideoSchema>;
  * `undefined` は変更なし、`title` の `null` はタイトルの削除を表す
  */
 export type UpdateBlockedVideo = z.output<typeof updateBlockedVideoSchema>;
+
+/**
+ * 動画 ID を照合キーとして追加または更新する PUT 用の Schema
+ * 
+ * `video_id` は必須で、既存レコードの動画 ID を別の値に変更する用途には使用しない
+ * `title` の省略は既存値を保持し、`null` または空文字が指定されたらクリアする
+ * 新規追加時に `title` を省略した場合は `null` を保存する
+ */
+export const upsertBlockedVideoSchema = createBlockedVideoSchema.extend({
+  title: createBlockedVideoSchema.shape.title.optional()
+});
+
+/** PUT の検証後の入力型・`video_id` は照合キー、`title` の `undefined` は既存値の保持を表す */
+export type UpsertBlockedVideo = z.output<typeof upsertBlockedVideoSchema>;
