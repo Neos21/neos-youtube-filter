@@ -74,7 +74,7 @@ export const createPageFilter = (
       border-radius: 4px;
       color: #111;
       background: #fff;
-      font-size: .8rem;
+      font-size: 13px;
       cursor: pointer;
     }
     :has(> [data-ytf-ui="video-button"]) > [data-ytf-ui="channel-button"] {
@@ -98,6 +98,8 @@ export const createPageFilter = (
   let needsAllCardsProcessing = false;
   /** 予約済みのカード処理のタイマー ID・`null` は未予約であり、重複予約を防ぐために保持する */
   let timerId: ReturnType<typeof setTimeout> | null = null;
+  /** 最後にカード処理件数をログへ出した時刻・同じ1枚の再処理が続く場合のログ量を抑える */
+  let lastCardProcessingLogAt = 0;
   /** カードに一致した非表示条件の理由を返す関数・条件を読み込むまでは常に `null` を返す */
   let matches: (element: HTMLElement) => string | null = (): null => null;
   
@@ -155,6 +157,8 @@ export const createPageFilter = (
     }
     
     const count = pendingElements.size;
+    /** この回で非表示または復元の判定結果が変わったか否か */
+    let hasVisibilityChange = false;
     for(const element of pendingElements) {
       /** 現在の探索範囲にある個別カードか否か・削除済み要素、広告、棚などは対象外 */
       const isEligible = rootSelectors !== '' && element.isConnected && element.closest(rootSelectors) != null && element.closest(youTubeSelectors.excludes) == null && element.querySelector(youTubeSelectors.containers) == null;
@@ -163,6 +167,7 @@ export const createPageFilter = (
       
       // OFF・対象外・条件不一致はすべて `null` とし、以前隠したカードなら復元する
       const reason = enabledElement.checked && isEligible ? matches(element) : null;
+      if((hiddenElements.get(element) ?? null) !== reason) hasVisibilityChange = true;
       if(reason == null) {
         restoreElement(element);  // 表示状態に戻す
       }
@@ -174,7 +179,11 @@ export const createPageFilter = (
     }
     
     pendingElements.clear();
-    if(count > 0) logger.log(`カード処理 ${count} 件・非表示 ${hiddenElements.size} 件`);
+    const now = Date.now();
+    if(count > 0 && (count > 1 || hasVisibilityChange || now - lastCardProcessingLogAt >= 10000)) {
+      logger.log(`カード処理 ${count} 件・非表示 ${hiddenElements.size} 件`);
+      lastCardProcessingLogAt = now;
+    }
   };
   
   /**

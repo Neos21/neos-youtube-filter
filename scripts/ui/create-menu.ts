@@ -39,13 +39,17 @@ export const createMenu = (): Logger & {
     border: 1px solid #888;
     padding: .25rem;
     color: #111;
+    font-size: 13px;
     background: #fff;
-  `;
+  `;  // iPhone で 1rem が相当小さいのでピクセルでフォントサイズ指定する
   
   /** メニューが閉じていても見える見出し・エラー時には警告の印を付ける */
   const summaryElement = document.createElement('summary');
   summaryElement.textContent = 'YTF';
-  summaryElement.style.cursor = 'pointer';
+  summaryElement.style.cssText = `
+    font-weight: bold;
+    cursor: pointer;
+  `;
   
   /** チェックボックスと再取得ボタンを横並びに配置する領域 */
   const actionsElement = document.createElement('div');
@@ -77,8 +81,8 @@ export const createMenu = (): Logger & {
   const versionElement = document.createElement('div');
   versionElement.textContent = versionText;
   versionElement.style.cssText = `
+    padding: .25rem 0;
     color: #888;
-    font-size: .8rem;
   `;
   
   menuElement.append(summaryElement, actionsElement, noticeElement, debugLogTextareaElement, versionElement);
@@ -101,7 +105,14 @@ export const createMenu = (): Logger & {
   const reloadButtonElement = document.createElement('button');
   reloadButtonElement.type = 'button';
   reloadButtonElement.textContent = '再取得';
-  reloadButtonElement.style.cursor = 'pointer';
+  reloadButtonElement.style.cssText = `
+    border: 1px solid #111;
+    padding: .25rem;
+    color: #111;
+    font-size: inherit;
+    background: #fff;
+    cursor: pointer;
+  `;
   
   actionsElement.append(reloadButtonElement);
   

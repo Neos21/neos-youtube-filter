@@ -1,3 +1,4 @@
+import { getChannelIdentifiersFromData } from '../dom/get-channel-identifiers-from-data';
 import { describeError } from '../helpers/describe-error';
 
 import type { FilterRules } from '../schemas/filter-rules-schema';
@@ -6,7 +7,7 @@ import type { Logger } from '../ui/create-menu';
 /**
  * フィルター条件に基づいて、1枚のカードを非表示にするか判定する関数を作る
  * 
- * チャンネルの一覧と正規表現を先に準備し、返した関数から各カードの HTML・表示文字列と照合する
+ * チャンネルの一覧と正規表現を先に準備し、返した関数から各カードの HTML・内部データ・表示文字列と照合する
  * `createPageFilter()` が条件更新時に呼び、返された関数をカードの再判定に使う
  * この関数も返された関数も、元のカードの DOM や表示状態は変更しない
  * 
@@ -68,6 +69,13 @@ export const createCardMatcher = (filterRules: FilterRules, logger: Logger): (el
     // 日本語などのハンドルは、URL エンコードされてリンクに現れる場合もある
     const handle = handles.find(value => lowerHtml.includes(value) || lowerHtml.includes(encodeURI(value).toLowerCase()));
     if(handle != null) return `ハンドル ${handle}`;
+    
+    // モバイルのホームではチャンネル識別子が HTML に現れないため、カードの `data` も調べる
+    if(channelIds.length > 0 || handles.length > 0) {
+      const identifiers = getChannelIdentifiersFromData(element);
+      if(identifiers?.channel_id != null && channelIds.includes(identifiers.channel_id)) return `チャンネル ${identifiers.channel_id}`;
+      if(identifiers?.handle != null && handles.includes(identifiers.handle)) return `ハンドル ${identifiers.handle}`;
+    }
     
     // 文字列か正規表現で判定する
     const lowerText = text.toLowerCase();

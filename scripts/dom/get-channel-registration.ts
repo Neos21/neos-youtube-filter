@@ -1,3 +1,4 @@
+import { getChannelIdentifiersFromData } from './get-channel-identifiers-from-data';
 import { getThumbnailElement } from './get-thumbnail-element';
 import { youTubeSelectors } from './youtube-selectors';
 
@@ -12,9 +13,9 @@ export type ChannelRegistration = {
 };
 
 /**
- * 動画カードのチャンネルリンクから登録用の識別子と参考タイトルを取得する
+ * 動画カードのチャンネルリンクまたは内部データから登録用の識別子と参考タイトルを取得する
  * 
- * ハンドルとチャンネル ID は URL のみから取得し、表示名から推測しない
+ * ハンドルとチャンネル ID はリンクの URL またはカードの `browseEndpoint` から取得し、表示名から推測しない
  * 同じ種類の識別子が複数見つかった場合は別チャンネルの混在を避けるため登録対象としない
  * 
  * @returns 登録用情報とボタンの配置先・識別子がない、曖昧、またはサムネイルがない場合は `null`
@@ -59,6 +60,13 @@ export const getChannelRegistration = (cardElement: HTMLElement): { channel: Cha
     const visibleName = linkElement.textContent.trim();
     if(title != null && visibleName !== '' && title !== visibleName) return null;
     if(title == null && visibleName !== '') title = visibleName;
+  }
+  
+  // モバイルのホームではチャンネルリンクがなく、カードの `data` にだけ遷移先がある
+  if(handle == null && channelId == null) {
+    const identifiers = getChannelIdentifiersFromData(cardElement);
+    handle = identifiers?.handle;
+    channelId = identifiers?.channel_id;
   }
   
   if(handle == null && channelId == null) return null;
