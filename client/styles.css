@@ -2,7 +2,9 @@
 @import "tailwindcss";
 
 /* daisyUI を使用する */
-@plugin "daisyui";
+@plugin "daisyui" {
+  themes: light --default;  /* ライトテーマのみにする */
+}
 
 :root {
   --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", Meiryo, sans-serif, "Apple Color Emoji", "Noto Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
