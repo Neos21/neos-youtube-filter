@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 // 購読済チャンネル一覧を取得する
 
 // `https://www.youtube.com/feed/channels` を開いて、開発者ツールで以下を実行し、登録チャンネル一覧を最下部までスクロールする

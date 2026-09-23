@@ -1,3 +1,5 @@
+
+
 // ==UserScript==
 // @name         Neo's YouTube Filter
 // @namespace    https://neos21.net/

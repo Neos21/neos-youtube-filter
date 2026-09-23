@@ -32,7 +32,7 @@ export const getVideoRegistration = (cardElement: HTMLElement): { video: VideoRe
   // リンクがない Shorts でも、動画サムネイルの URL に ID があれば登録できる
   if(videoId == null) {
     for(const imageElement of thumbnailElement.querySelectorAll('img')) {
-      const source = imageElement.getAttribute('src') || imageElement.getAttribute('data-src') || '';
+      const source = `${imageElement.getAttribute('src') ?? ''} ${imageElement.getAttribute('data-src') ?? ''}`;
       videoId = source.match((/\/vi(?:_webp)?\/([A-Za-z0-9_-]{11})\//))?.[1];
       if(videoId != null) break;
     }

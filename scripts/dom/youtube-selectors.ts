@@ -37,7 +37,7 @@ export const youTubeSelectors = {
   /** ボタンを重ねるサムネイル領域 */
   thumbnails: 'ytd-thumbnail, yt-thumbnail-view-model, ytm-thumbnail-cover, .shortsLockupViewModelHostThumbnailContainer, .shortsLockupViewModelHostThumbnailParentContainer',
   /** 専用のサムネイル領域がない場合の配置先・チャンネル画像のリンクは含めない */
-  thumbnailLinks: 'a[href*="watch?"] : has(img), a[href*="/shorts/"] : has(img)',
+  thumbnailLinks: 'a[href*="watch?"]:has(img), a[href*="/shorts/"]:has(img)',  // eslint-disable-line neos-eslint-plugin/comment-colon-spacing
   /** 参考タイトルを取得する要素・メタ情報を含むカード全体のテキストは使用しない */
   videoTitles: '#video-title, h3, .shortsLockupViewModelHostMetadataTitle',
   /** 非表示判定から除外する要素・カード自身または祖先が一致した場合に除外する */
