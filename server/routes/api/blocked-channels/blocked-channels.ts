@@ -6,6 +6,8 @@ import { createBlockedChannelSchema, updateBlockedChannelSchema, upsertBlockedCh
 import { invalidRequestBodyErrorMessage } from '../../../constants/server-constants';
 import { parseId } from '../../../helpers/parse-id';
 import { BlockedChannelsRepository } from '../../../repositories/blocked-channels-repository';
+import { isSubscribedChannelConflictError } from '../../../services/resolve-subscribed-channel';
+import { upsertBlockedChannel } from '../../../services/upsert-blocked-channel';
 
 import type { HonoBindings } from '../../../types/hono-bindings';
 
@@ -60,7 +62,7 @@ blockedChannels.patch('/:id', async context => {  // eslint-disable-line neos-es
   return context.json({ result: blockedChannel }, httpStatusCode.ok);
 });
 
-/** 1件追加または更新する */
+/** 購読済みチャンネルに一致すればそちらを補完し、それ以外をブロック済みチャンネルに追加・更新する */
 blockedChannels.put('/', async context => {
   const body = await context.req.json().catch(() => null);
   if(body == null) return context.json({ error: invalidRequestBodyErrorMessage }, httpStatusCode.badRequest);
@@ -68,10 +70,13 @@ blockedChannels.put('/', async context => {
   const parsed = upsertBlockedChannelSchema.safeParse(body);
   if(!parsed.success) return context.json({ error: mergeIssues(parsed.error) }, httpStatusCode.badRequest);
   
-  const blockedChannel = await new BlockedChannelsRepository(context.env.DB).upsert(parsed.data);
-  if(blockedChannel == null) return context.json({ error: '非表示チャンネルの保存結果を取得できませんでした' }, httpStatusCode.internalServerError);
+  const savedChannel = await upsertBlockedChannel(context.env.DB, parsed.data);
+  if(savedChannel.error != null) {
+    const status = isSubscribedChannelConflictError(savedChannel.error) ? httpStatusCode.conflict : httpStatusCode.internalServerError;
+    return context.json({ error: savedChannel.error }, status);
+  }
   
-  return context.json({ result: blockedChannel }, httpStatusCode.ok);
+  return context.json({ result: savedChannel.result }, httpStatusCode.ok);
 });
 
 /** 1件削除する */

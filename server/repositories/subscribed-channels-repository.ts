@@ -18,6 +18,24 @@ export class SubscribedChannelsRepository {
     return await this.db.prepare('SELECT id, handle, channel_id, title, created_at FROM subscribed_channels WHERE id = ? LIMIT 1').bind(id).first<SubscribedChannel>();
   }
   
+  /** 指定されたハンドルまたはチャンネル ID に一致するレコードを探す・両方が別レコードに一致した場合も返す */
+  public async findByIdentifiers(handle: string | null, channelId: string | null): Promise<Array<SubscribedChannel>> {
+    const result = await this.db
+      .prepare('SELECT id, handle, channel_id, title, created_at FROM subscribed_channels WHERE handle = ? OR channel_id = ? LIMIT 2')
+      .bind(handle, channelId)
+      .all<SubscribedChannel>();
+    return result.results;
+  }
+  
+  /** 参考タイトルが完全一致するレコードを探す・複数一致を判定できるよう最大2件返す */
+  public async findByTitle(title: string): Promise<Array<SubscribedChannel>> {
+    const result = await this.db
+      .prepare('SELECT id, handle, channel_id, title, created_at FROM subscribed_channels WHERE title = ? LIMIT 2')
+      .bind(title)
+      .all<SubscribedChannel>();
+    return result.results;
+  }
+  
   /** 1件追加する・登録結果を `RETURNING` で取得し返す */
   public async create(subscribedChannel: CreateSubscribedChannel): Promise<SubscribedChannel | null> {
     return await this.db

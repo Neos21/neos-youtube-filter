@@ -1,4 +1,4 @@
-import { getChannelIdentifiersFromData } from '../dom/get-channel-identifiers-from-data';
+import { getChannelRegistration } from '../dom/get-channel-registration';
 import { describeError } from '../helpers/describe-error';
 
 import type { FilterRules } from '../schemas/filter-rules-schema';
@@ -70,9 +70,9 @@ export const createCardMatcher = (filterRules: FilterRules, logger: Logger): (el
     const handle = handles.find(value => lowerHtml.includes(value) || lowerHtml.includes(encodeURI(value).toLowerCase()));
     if(handle != null) return `ハンドル ${handle}`;
     
-    // モバイルのホームではチャンネル識別子が HTML に現れないため、カードの `data` も調べる
+    // HTML に識別子がない場合も、リンクと `data` の矛盾を確認した登録用識別子で照合する
     if(channelIds.length > 0 || handles.length > 0) {
-      const identifiers = getChannelIdentifiersFromData(element);
+      const identifiers = getChannelRegistration(element)?.channel;
       if(identifiers?.channel_id != null && channelIds.includes(identifiers.channel_id)) return `チャンネル ${identifiers.channel_id}`;
       if(identifiers?.handle != null && handles.includes(identifiers.handle)) return `ハンドル ${identifiers.handle}`;
     }

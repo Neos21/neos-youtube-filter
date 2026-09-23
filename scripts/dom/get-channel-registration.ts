@@ -4,9 +4,9 @@ import { youTubeSelectors } from './youtube-selectors';
 
 /** カードにある確認済みのチャンネル識別子と参考タイトル・不明な項目は送信しない */
 export type ChannelRegistration = {
-  /** URL に含まれるハンドル・大小文字を同一視する照合用の小文字表現 */
+  /** リンクか内部データに含まれるハンドル・大小文字を同一視する照合用の小文字表現 */
   handle?: string;
-  /** URL に含まれるチャンネル ID・大小文字を保持する */
+  /** リンクか内部データに含まれるチャンネル ID・大小文字を保持する */
   channel_id?: string;
   /** 画面に表示されたチャンネル名・取得できない場合は `undefined` */
   title?: string;
@@ -16,7 +16,7 @@ export type ChannelRegistration = {
  * 動画カードのチャンネルリンクまたは内部データから登録用の識別子と参考タイトルを取得する
  * 
  * ハンドルとチャンネル ID はリンクの URL またはカードの `browseEndpoint` から取得し、表示名から推測しない
- * 同じ種類の識別子が複数見つかった場合は別チャンネルの混在を避けるため登録対象としない
+ * 両方の取得元を調べ、同じ種類の識別子が食い違った場合は別チャンネルの混在を避けるため登録対象としない
  * 
  * @returns 登録用情報とボタンの配置先・識別子がない、曖昧、またはサムネイルがない場合は `null`
  */
@@ -62,13 +62,12 @@ export const getChannelRegistration = (cardElement: HTMLElement): { channel: Cha
     if(title == null && visibleName !== '') title = visibleName;
   }
   
-  // モバイルのホームではチャンネルリンクがなく、カードの `data` にだけ遷移先がある
-  if(handle == null && channelId == null) {
-    const identifiers = getChannelIdentifiersFromData(cardElement);
-    handle = identifiers?.handle;
-    channelId = identifiers?.channel_id;
-  }
+  // リンクが ID のみを示す場合も内部データのハンドルを調べ、矛盾がなければ同じカードの情報を合わせる
+  const identifiers = getChannelIdentifiersFromData(cardElement);
+  if((handle != null && identifiers?.handle != null && handle !== identifiers.handle) || (channelId != null && identifiers?.channel_id != null && channelId !== identifiers.channel_id)) return null;
   
+  handle ??= identifiers?.handle;
+  channelId ??= identifiers?.channel_id;
   if(handle == null && channelId == null) return null;
   
   title ??= cardElement.querySelector(youTubeSelectors.channelNames)?.textContent?.trim() || undefined;

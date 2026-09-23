@@ -1,4 +1,4 @@
-import { maxLogMessageLength, maxLogMessages, versionText } from '../constants';
+import { baseUrl, maxLogMessageLength, maxLogMessages, versionText } from '../constants';
 
 /** ロガー関数 : API やカード処理にはメニュー要素ではなくこの型で渡す */
 export type Logger = {
@@ -62,7 +62,7 @@ export const createMenu = (): Logger & {
   
   /** 直近のエラーメッセージを表示する領域・通常ログはここには出さない */
   const noticeElement = document.createElement('div');
-  noticeElement.style.color = '#b00';
+  noticeElement.style.color = '#c00';
   
   /** ログ履歴を選択・コピーするための読み取り専用欄 */
   const debugLogTextareaElement = document.createElement('textarea');
@@ -78,11 +78,15 @@ export const createMenu = (): Logger & {
   `;
   
   /** 本スクリプト自体の最新版が読み込めているか確認できるようにするための適当な文字列 */
-  const versionElement = document.createElement('div');
+  const versionElement = document.createElement('a');
+  versionElement.href = baseUrl;
+  versionElement.target = '_blank';
   versionElement.textContent = versionText;
   versionElement.style.cssText = `
-    padding: .25rem 0;
+    display: block;
+    padding: .25rem;
     color: #888;
+    text-decoration: none;
   `;
   
   menuElement.append(summaryElement, actionsElement, noticeElement, debugLogTextareaElement, versionElement);

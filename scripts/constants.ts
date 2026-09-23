@@ -1,5 +1,8 @@
+/** リンク用ベース URL */
+export const baseUrl = 'https://ytf.neos21.workers.dev';
+
 /** メインスクリプトから呼び出す API のベース URL・各エンドポイントのパスを末尾に連結する */
-export const apiBaseUrl = 'https://ytf.neos21.workers.dev/api';
+export const apiBaseUrl = `${baseUrl}/api`;
 
 /** Bearer トークンを保存する LocalStorage のキー・API の接続先を変えても同じキーを使う */
 export const tokenStorageKey = 'ytf:token';
@@ -20,4 +23,4 @@ export const maxLogMessages = 200;
 export const maxLogMessageLength = 2000;
 
 /** 本スクリプト自体の最新版が読み込めているか確認できるようにするための適当な文字列 */
-export const versionText = 'Version : 2029-06-23 18:55:31';  // eslint-disable-line neos-eslint-plugin/comment-colon-spacing
+export const versionText = 'Version : 2029-06-23 19:43:33';  // eslint-disable-line neos-eslint-plugin/comment-colon-spacing

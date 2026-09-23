@@ -6,6 +6,7 @@ import { createSubscribedChannelSchema, updateSubscribedChannelSchema, upsertSub
 import { invalidRequestBodyErrorMessage } from '../../../constants/server-constants';
 import { parseId } from '../../../helpers/parse-id';
 import { SubscribedChannelsRepository } from '../../../repositories/subscribed-channels-repository';
+import { isSubscribedChannelConflictError, resolveSubscribedChannel } from '../../../services/resolve-subscribed-channel';
 
 import type { HonoBindings } from '../../../types/hono-bindings';
 
@@ -68,7 +69,13 @@ subscribedChannels.put('/', async context => {
   const parsed = upsertSubscribedChannelSchema.safeParse(body);
   if(!parsed.success) return context.json({ error: mergeIssues(parsed.error) }, httpStatusCode.badRequest);
   
-  const subscribedChannel = await new SubscribedChannelsRepository(context.env.DB).upsert(parsed.data);
+  const subscribedChannelsRepository = new SubscribedChannelsRepository(context.env.DB);
+  const resolved = await resolveSubscribedChannel(subscribedChannelsRepository, parsed.data);
+  if(resolved.error != null) return context.json({ error: resolved.error }, isSubscribedChannelConflictError(resolved.error) ? httpStatusCode.conflict : httpStatusCode.internalServerError);
+  
+  const subscribedChannel = resolved.result == null ?
+    await subscribedChannelsRepository.upsert(parsed.data) :
+    await subscribedChannelsRepository.update(resolved.result.id, parsed.data);
   if(subscribedChannel == null) return context.json({ error: '購読チャンネルの保存結果を取得できませんでした' }, httpStatusCode.internalServerError);
   
   return context.json({ result: subscribedChannel }, httpStatusCode.ok);

@@ -14,8 +14,8 @@ import type { ChannelRegistration } from '../dom/get-channel-registration';
  * @param logger ボタン配置・解除・登録失敗を記録するログ機能
  */
 export const createBlockChannelButtons = (registerChannel: (channel: ChannelRegistration) => Promise<Result<string>>, logger: Logger): {
-  /** 対象カードのボタンを配置・更新する・対象外や削除されたカードのボタンは取り除く */
-  update: (cardElement: HTMLElement, isEligible: boolean) => void;
+  /** 取得済みのチャンネル情報でボタンを配置・更新する・`null` の場合は取り除く */
+  update: (cardElement: HTMLElement, registration: ReturnType<typeof getChannelRegistration>) => void;
   /** DOM から削除されたカードのボタンを解放する・DOM の削除通知をまとめて受け取った時に呼ぶ */
   removeDisconnected: () => void;
   /** 配置した全ボタンを取り除く・ページ移動と監視停止時に呼ぶ */
@@ -34,8 +34,7 @@ export const createBlockChannelButtons = (registerChannel: (channel: ChannelRegi
   };
   
   return {
-    update: (cardElement: HTMLElement, isEligible: boolean): void => {
-      const registration = isEligible ? getChannelRegistration(cardElement) : null;
+    update: (cardElement: HTMLElement, registration: ReturnType<typeof getChannelRegistration>): void => {
       if(registration == null) {
         remove(cardElement);
         return;
