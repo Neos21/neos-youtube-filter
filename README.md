@@ -2,6 +2,8 @@
 
 YouTube の見たくない動画を非表示にする仕組み。
 
+<https://ytf.neos21.workers.dev>
+
 
 ## 機能概要
 
