@@ -32,8 +32,16 @@ export const youTubeSelectors = {
     'yt-lockup-view-model', 'ytm-rich-item-renderer', 'ytm-video-with-context-renderer', 'ytm-compact-video-renderer',
     'ytm-shorts-lockup-view-model-v2', 'ytm-shorts-lockup-view-model', 'ytd-reel-item-renderer', 'ytm-reel-item-renderer'
   ],
+  /** 動画 ID を取得するリンク・通常動画と Shorts のどちらも対象にする */
+  videoLinks: 'a[href*="watch?"], a[href*="/shorts/"]',
+  /** ボタンを重ねるサムネイル領域 */
+  thumbnails: 'ytd-thumbnail, yt-thumbnail-view-model, ytm-thumbnail-cover, .shortsLockupViewModelHostThumbnailContainer, .shortsLockupViewModelHostThumbnailParentContainer',
+  /** 専用のサムネイル領域がない場合の配置先・チャンネル画像のリンクは含めない */
+  thumbnailLinks: 'a[href*="watch?"] : has(img), a[href*="/shorts/"] : has(img)',
+  /** 参考タイトルを取得する要素・メタ情報を含むカード全体のテキストは使用しない */
+  videoTitles: '#video-title, h3, .shortsLockupViewModelHostMetadataTitle',
   /** 非表示判定から除外する要素・カード自身または祖先が一致した場合に除外する */
-  excluded: '[hidden], ytd-ad-slot-renderer, ytm-ad-slot-renderer, ytd-promoted-sparkles-web-renderer, ytd-display-ad-renderer, ytd-playlist-panel-renderer, ytm-playlist-panel-renderer, yt-collection-thumbnail-view-model, ytd-comments, ytm-comment-section-renderer, #movie_player, #player',
+  excludes: '[hidden], ytd-ad-slot-renderer, ytm-ad-slot-renderer, ytd-promoted-sparkles-web-renderer, ytd-display-ad-renderer, ytd-playlist-panel-renderer, ytm-playlist-panel-renderer, yt-collection-thumbnail-view-model, ytd-comments, ytm-comment-section-renderer, #movie_player, #player',
   /** 複数動画をまとめた棚・コレクションの要素・これを子孫に含むカード候補は1枚の動画として扱わない */
   containers: 'ytd-rich-shelf-renderer, ytd-reel-shelf-renderer, ytm-reel-shelf-renderer, grid-shelf-view-model, yt-collection-thumbnail-view-model'
 };

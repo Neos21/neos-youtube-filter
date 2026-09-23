@@ -2,7 +2,10 @@ import { createCardMatcher } from './create-card-matcher';
 import { cardProcessingDelayMilliseconds } from '../constants';
 import { getYouTubePage } from '../dom/get-youtube-page';
 import { youTubeSelectors } from '../dom/youtube-selectors';
+import { createBlockVideoButtons } from '../ui/create-block-video-buttons';
 
+import type { Result } from '../../shared/types/utilities/result';
+import type { VideoRegistration } from '../dom/get-video-registration';
 import type { FilterRules } from '../schemas/filter-rules-schema';
 import type { Logger } from '../ui/create-menu';
 
@@ -15,9 +18,14 @@ import type { Logger } from '../ui/create-menu';
  * 
  * @param enabledElement 非表示 ON・OFF のチェックボックス : 現在のチェック状態を判定に使い、ページ移動時は初期値に書き換える
  * @param logger ロガー : 非表示・復元の対象、処理件数、監視開始・停止を出力する
+ * @param registerVideo 動画の登録と条件更新を行う処理・ボタン配置と同じカード走査から利用する
  * @returns `start` は監視開始、`stop` は監視停止と表示復元、`updateFilterRules` は条件の差し替えと全カードの再判定を行う
  */
-export const createPageFilter = (enabledElement: HTMLInputElement, logger: Logger): {
+export const createPageFilter = (
+  enabledElement: HTMLInputElement,
+  logger: Logger,
+  registerVideo: (video: VideoRegistration) => Promise<Result<string>>
+): {
   /** CSS とイベント監視を登録し、現在のページを処理する・起動時に一度呼ぶ */
   start: () => void;
   /** 監視と予約処理を解除し、隠したカードを復元する・認証失敗による終了時に呼ぶ */
@@ -25,6 +33,9 @@ export const createPageFilter = (enabledElement: HTMLInputElement, logger: Logge
   /** 照合に使う条件を差し替える・監視中なら全カードの再判定も予約する */
   updateFilterRules: (filterRules: FilterRules) => void;
 } => {
+  /** カードごとの動画登録ボタン・ページ移動と停止時はまとめて解除する */
+  const blockVideoButtons = createBlockVideoButtons(registerVideo, logger);
+  
   /** 個別の動画カードに該当する要素を探す CSS セレクタ・候補タグを OR 条件で連結したもの */
   const cardSelector = youTubeSelectors.cards.join(', ');
   
@@ -36,7 +47,37 @@ export const createPageFilter = (enabledElement: HTMLInputElement, logger: Logge
   /** 非表示クラスの CSS を持つ要素 : 監視開始時にページに挿入し、停止時に取り除く */
   const styleElement = document.createElement('style');
   styleElement.dataset.ytfUi = 'style';
-  styleElement.textContent = '.ytf-hidden { display: none !important; }';  // eslint-disable-line neos-eslint-plugin/comment-colon-spacing
+  /* eslint-disable neos-eslint-plugin/comment-colon-spacing */
+  styleElement.textContent = `
+    .ytf-hidden {
+      display: none !important;
+    }
+    
+    :has(> [data-ytf-ui="video-button"]) {
+      position: relative !important;
+    }
+    
+    [data-ytf-ui="video-button"] {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      z-index: 10;
+      max-width: calc(100% - 8px);
+      min-height: 32px;
+      padding: 4px 6px;
+      border: 1px solid #888;
+      border-radius: 4px;
+      color: #111;
+      background: #fff;
+      font: 12px sans-serif;
+      cursor: pointer;
+    }
+    [data-ytf-ui="video-button"]:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+  `;
+  /* eslint-enable neos-eslint-plugin/comment-colon-spacing */
   
   /** 現在のページでカードを探す領域の CSS セレクタ・空文字は対象外ページを表す */
   let rootSelectors = '';
@@ -107,7 +148,9 @@ export const createPageFilter = (enabledElement: HTMLInputElement, logger: Logge
     const count = pendingElements.size;
     for(const element of pendingElements) {
       /** 現在の探索範囲にある個別カードか否か・削除済み要素、広告、棚などは対象外 */
-      const isEligible = rootSelectors !== '' && element.isConnected && element.closest(rootSelectors) != null && element.closest(youTubeSelectors.excluded) == null && element.querySelector(youTubeSelectors.containers) == null;
+      const isEligible = rootSelectors !== '' && element.isConnected && element.closest(rootSelectors) != null && element.closest(youTubeSelectors.excludes) == null && element.querySelector(youTubeSelectors.containers) == null;
+      blockVideoButtons.update(element, isEligible);
+      
       // OFF・対象外・条件不一致はすべて `null` とし、以前隠したカードなら復元する
       const reason = enabledElement.checked && isEligible ? matches(element) : null;
       if(reason == null) {
@@ -156,6 +199,7 @@ export const createPageFilter = (enabledElement: HTMLInputElement, logger: Logge
     // 遷移後の URL を控える
     currentPageUrl = url.href;
     
+    blockVideoButtons.clear();
     // 非表示にしていた要素を一旦元に戻す
     hiddenElements.forEach((_reason, element) => restoreElement(element));
     pendingElements.clear();
@@ -239,6 +283,8 @@ export const createPageFilter = (enabledElement: HTMLInputElement, logger: Logge
       collectElement(target, record.type === 'attributes' && (record.attributeName === 'hidden' || (rootSelectors !== '' && target.matches(rootSelectors))));
     }
     
+    // カードが取り除かれた時はボタンの参照も解放する・自分の UI だけの変更では実行しない
+    if(records.some(record => [...record.removedNodes].some(node => !isOwnNode(node)))) blockVideoButtons.removeDisconnected();
     if(pendingElements.size > 0) schedule();
   });
   
@@ -270,6 +316,7 @@ export const createPageFilter = (enabledElement: HTMLInputElement, logger: Logge
       isRunning = false;
       observer.disconnect();
       if(timerId != null) clearTimeout(timerId);
+      blockVideoButtons.clear();
       pendingElements.clear();
       window.removeEventListener('yt-navigate-finish', onNavigate);
       window.removeEventListener('popstate', onNavigate);

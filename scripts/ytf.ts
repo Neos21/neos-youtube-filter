@@ -6,6 +6,10 @@ import { readStorage, removeStorage, writeStorage } from './helpers/storage';
 import { apiFilterRulesSchema } from './schemas/filter-rules-schema';
 import { createMenu } from './ui/create-menu';
 
+import type { VideoRegistration } from './dom/get-video-registration';
+import type { FilterRules } from './schemas/filter-rules-schema';
+import type { Result } from '../shared/types/utilities/result';
+
 /** メインスクリプトの起動処理・トークンと条件を読み込み、操作メニューを配置してカード監視を開始する */
 (async (): Promise<void> => {
   // 対象サイトと重複起動を確認する・停止後も再読み込みまでは起動し直さない
@@ -29,8 +33,8 @@ import { createMenu } from './ui/create-menu';
   const savedTokenResult = writeStorage(tokenStorageKey, token);
   if(savedTokenResult.error != null) menu.error(savedTokenResult.error);
   
-  /** カードの非表示・復元と DOM 監視を操作するオブジェクト・この時点ではまだ監視を開始しない */
-  const pageFilter = createPageFilter(menu.enabledElement, menu);
+  /** 現在の判定用条件・全件取得と動画登録の成功結果をここに反映してから保存する */
+  let currentFilterRules: FilterRules = { blocked_videos: [], blocked_channels: [], blocked_patterns: [], subscribed_channels: [] };
   
   /** 認証失敗により終了したか否か・初回の監視開始を防ぎ、再取得ボタンを無効のままにする */
   let isStopped = false;
@@ -44,6 +48,39 @@ import { createMenu } from './ui/create-menu';
     const removedResult = removeStorage(tokenStorageKey);
     if(removedResult.error != null) menu.error(removedResult.error);
   });
+  
+  /**
+   * 動画を登録し、保存結果の ID を判定用条件とキャッシュに追加する
+   * 
+   * PUT の成功後も全件取得はせず、同じ動画を含む全カードを現在の ON・OFF に従って再判定する
+   * 再取得または別の登録の通信中は新たな送信を受け付けず、応答順による条件の上書きを避ける
+   * 
+   * @returns 成功時は保存した動画 ID・通信失敗や不正応答では条件を変更せずエラーを返す
+   */
+  const registerVideo = async (video: VideoRegistration): Promise<Result<string>> => {
+    if(isStopped) return { error: '認証失敗により停止中です・ページを再読み込みしてください' };
+    if(menu.reloadButtonElement.disabled) return { error: '別の通信が実行中です・完了後にもう一度操作してください' };
+    menu.reloadButtonElement.disabled = true;
+    menu.clearError();
+    menu.log(`動画登録開始 : ${video.video_id}`);
+    const response = await requestApi('/blocked-videos', 'PUT', video);
+    menu.reloadButtonElement.disabled = isStopped;
+    if(response.error != null) return { error: `動画登録失敗 ${video.video_id} : ${response.error}` };
+    
+    const body = response.result;
+    const savedVideo = body != null && typeof body === 'object' && 'result' in body ? body.result : null;
+    if(savedVideo == null || typeof savedVideo !== 'object' || !('video_id' in savedVideo) || savedVideo.video_id !== video.video_id) {
+      return { error: `動画登録の応答形式が不正です ${video.video_id}・既存の条件を保持します` };
+    }
+    if(!currentFilterRules.blocked_videos.includes(savedVideo.video_id)) currentFilterRules.blocked_videos.push(savedVideo.video_id);
+    saveFilterRules(currentFilterRules, menu);
+    pageFilter.updateFilterRules(currentFilterRules);
+    menu.log(`動画登録成功 : ${savedVideo.video_id}・非表示 ${menu.enabledElement.checked ? 'ON' : 'OFF'}`);
+    return { result: savedVideo.video_id };
+  };
+  
+  /** カードの非表示・復元と DOM 監視を操作するオブジェクト・この時点ではまだ監視を開始しない */
+  const pageFilter = createPageFilter(menu.enabledElement, menu, registerVideo);
   
   /**
    * API から全フィルター条件を取得し、キャッシュとカード判定の条件を更新する
@@ -67,7 +104,8 @@ import { createMenu } from './ui/create-menu';
         menu.error(`API 応答形式が不正です・既存の条件を保持します : ${parsed.error.issues.map(issue => issue.path.join('.')).join(', ')}`);
       }
       else {
-        saveFilterRules(parsed.data, menu);
+        currentFilterRules = parsed.data;
+        saveFilterRules(currentFilterRules, menu);
         pageFilter.updateFilterRules(parsed.data);
         menu.log(`条件取得 : 動画 ${parsed.data.blocked_videos.length}・チャンネル ${parsed.data.blocked_channels.length}・パターン ${parsed.data.blocked_patterns.length}・購読 ${parsed.data.subscribed_channels.length}`);
       }
@@ -79,7 +117,8 @@ import { createMenu } from './ui/create-menu';
   /** 保存済みの判定用条件・このキャッシュがあれば API を呼ばずに利用する・`null` は利用できるキャッシュがないことを表す */
   const cachedFilterRules = readFilterRules(menu);
   if(cachedFilterRules != null) {
-    pageFilter.updateFilterRules(cachedFilterRules);
+    currentFilterRules = cachedFilterRules;
+    pageFilter.updateFilterRules(currentFilterRules);
   }
   else {
     await reloadFilterRules();
