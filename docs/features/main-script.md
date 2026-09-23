@@ -49,3 +49,28 @@ API のベース URL は `scripts/ytf.ts` 内の `apiUrl` 定数で指定する�
 - `window.__YTF__.updateRules(rules)` : 登録成功後の条件をメモリとキャッシュに反映する入口。全件取得日時は維持する。再取得中・条件未取得・不正な入力では false を返すため、登録処理からは再取得完了後に呼ぶ
 
 表示・非表示の切替や DOM 監視は、後続タスクでこれらの条件を利用する。
+
+
+## 動画カードの取得
+
+`window.__YTF__.page` で現在のページを取得できる。`site` は `desktop` または `mobile`、`type` は `home`・`watch`・`search`。対象外のページでは `null` となる。
+
+`window.__YTF__.getCards()` は現在の DOM から通常動画・Shorts のカード情報を返す。画面の表示状態や DOM は変更しない。遅延描画・追加読込後は呼び直すことで、その時点の情報を取得できる。
+
+- `element` : 個別カードの要素
+- `thumbnailElement`・`thumbnailUrl` : サムネイルのリンク要素と画像 URL
+- `videoId`・`title` : 動画 ID とタイトル
+- `channelName`・`handle`・`channelId` : チャンネル名と取得可能な識別子
+- `isShort` : Shorts のカードか否か
+
+動画 ID が取得できないカードは結果に含めず、それ以外の取得不能な項目は `null` とする。チャンネル名しかないカードから識別子は推測しない。同じ動画が別の場所に表示されている場合は、それぞれ別カードとして返す。
+
+動画ページでは関連動画欄だけを探索し、Shorts 専用プレイヤー・チャンネルページなどは対象外とする。セレクタ候補は [youtube-selectors.ts](../../scripts/dom/youtube-selectors.ts) にまとめている。
+
+開発者ツールでは次のように抽出内容を確認できる。
+
+```javascript
+console.table(window.__YTF__.getCards().map(({ videoId, title, channelName, handle, channelId, isShort }) => ({
+  videoId, title, channelName, handle, channelId, isShort
+})));
+```

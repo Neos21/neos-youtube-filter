@@ -178,6 +178,12 @@
     - 通常動画と Shorts の各カードから動画 ID・動画タイトル・チャンネル名・取得可能なハンドルまたはチャンネル ID・サムネイル・非表示にするカード要素を取得する
     - Shorts 専用プレイヤーは対象外とし、対象ページ内の Shorts カードでは `/shorts/動画ID` 等の URL から抽出する。チャンネル情報は DOM で確認できる範囲だけを利用する
     - 完了条件 : 両ドメインの対象3画面について通常動画・Shorts の DOM と抽出例を記録する。不明な識別子を捏造せず、関連動画以外の再生中動画・操作 UI を巻き込まない
+    - 実装済み (2026-09-23) : scripts/dom/ にページ判定・セレクタ定義・抽出処理を分離し、window.__YTF__.page・getCards() を追加した。タイトル・チャンネル名・識別子・画像 URL・カード要素を取得し、入れ子の重複を除外する。表示制御や DOM 監視は追加していない。利用方法は docs/features/main-script.md を参照する
+    - DOM 調査 : 一時配置したライブラリで Chromium を起動し、未ログインの www と m のホーム・検索結果 (Beatles)・動画ページ (dQw4w9WgXcQ) を確認した。PC は 1440×1000、モバイルは iPhone Safari の User-Agent と 390×844 のエミュレーションを使用した。iPhone 実機・Safari エンジンの検証ではない
+    - PC の抽出結果 : 検索結果では ytd-video-renderer・yt-lockup-view-model の通常動画28件と、ytm-shorts-lockup-view-model-v2 内の Shorts 20件を抽出した。例は CGj85pVzRJs (The Beatles・チャンネル ID 取得可) と A2ixOpa2UeY (Shorts・識別子なし)。関連動画では ytd-watch-next-secondary-results-renderer 内の yt-lockup-view-model から通常動画19件を抽出した。例は vbK7SmzjK8g (STEREO NOSTALGIA・識別子なし)。コレクションのカードは除外した
+    - モバイルの抽出結果 : 検索結果では ytm-video-with-context-renderer の通常動画16件と ytm-shorts-lockup-view-model の Shorts 12件を抽出した。例は uSo2dagQ8EE (@goodday-k6p2m) と A2ixOpa2UeY (動画タイトルとチャンネル名を別の位置から取得・識別子なし)。関連動画では section-identifier="related-items" 内の通常動画12件を抽出した。例は nMAcZp5Tpjw (@abcarco89)
+    - 検証 : Lint・全体ビルド成功。取得した6画面の DOM と、一時的な26ケースで入れ子の重複・同じ動画の別カード・探索範囲・広告/コレクション除外・非表示の旧ページ・画像 URL からの Shorts ID 取得・識別子の正規化と欠落を確認した。生成 IIFE でも getCards の公開、DOM 再利用時の再取得、URL 変更、Shorts 専用ページで空配列となることを確認した。恒久的なテストファイル・依存パッケージは追加していない
+    - 残件 : ホームは両ドメインとも「まずは検索してみましょう」と表示され、動画カードがなかった。ytd-browse[page-subtype="home"] 内の ytd-rich-grid-renderer と ytm-browse 内の ytm-rich-grid-renderer の存在は確認したが、通常動画・Shorts の実データ抽出は未確認。関連動画欄にも Shorts が出現しなかった。開発者の利用環境でこれらの抽出結果を確認するまで17は未完のままとする
 - [ ] 18. フィルター判定と CSS クラスによる非表示・復元を実装する
     - 対象 : メインスクリプトの照合処理・CSS 注入・カード更新
     - 動画 ID、チャンネルのハンドル・ID、動画名またはチャンネル名への文字列・正規表現、購読チャンネルによる条件を 01 の仕様どおり評価する
