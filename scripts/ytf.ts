@@ -3,9 +3,10 @@ import { createPageFilter } from './filter/create-page-filter';
 import { readFilterRules, saveFilterRules } from './helpers/filter-rules';
 import { createApiClient } from './helpers/request-api';
 import { readStorage, removeStorage, writeStorage } from './helpers/storage';
-import { apiFilterRulesSchema } from './schemas/filter-rules-schema';
+import { apiFilterRulesSchema, filterRulesSchema } from './schemas/filter-rules-schema';
 import { createMenu } from './ui/create-menu';
 
+import type { ChannelRegistration } from './dom/get-channel-registration';
 import type { VideoRegistration } from './dom/get-video-registration';
 import type { FilterRules } from './schemas/filter-rules-schema';
 import type { Result } from '../shared/types/utilities/result';
@@ -33,7 +34,7 @@ import type { Result } from '../shared/types/utilities/result';
   const savedTokenResult = writeStorage(tokenStorageKey, token);
   if(savedTokenResult.error != null) menu.error(savedTokenResult.error);
   
-  /** 現在の判定用条件・全件取得と動画登録の成功結果をここに反映してから保存する */
+  /** 現在の判定用条件・全件取得と動画・チャンネル登録の成功結果をここに反映してから保存する */
   let currentFilterRules: FilterRules = { blocked_videos: [], blocked_channels: [], blocked_patterns: [], subscribed_channels: [] };
   
   /** 認証失敗により終了したか否か・初回の監視開始を防ぎ、再取得ボタンを無効のままにする */
@@ -79,8 +80,49 @@ import type { Result } from '../shared/types/utilities/result';
     return { result: savedVideo.video_id };
   };
   
+  /**
+   * チャンネルを登録し、返された識別子を判定用条件とキャッシュに反映する
+   * 
+   * 既存の同じハンドルまたはチャンネル ID の軽量レコードを保存結果で置き換え、識別子の補完を反映する
+   * API が送信した識別子と異なる結果を返した場合は条件を変更せずエラーにする
+   * 
+   * @returns 成功時は登録に使った識別子・失敗時は条件を変更せずエラーを返す
+   */
+  const registerChannel = async (channel: ChannelRegistration): Promise<Result<string>> => {
+    if(isStopped) return { error: '認証失敗により停止中です・ページを再読み込みしてください' };
+    const identifier = channel.handle ?? channel.channel_id;
+    if(identifier == null) return { error: 'チャンネル登録失敗 : チャンネル識別子がありません' };
+    if(menu.reloadButtonElement.disabled) return { error: '別の通信が実行中です・完了後にもう一度操作してください' };
+    menu.reloadButtonElement.disabled = true;
+    menu.clearError();
+    menu.log(`チャンネル登録開始 : ${identifier}`);
+    const response = await requestApi('/blocked-channels', 'PUT', channel);
+    menu.reloadButtonElement.disabled = isStopped;
+    if(response.error != null) return { error: `チャンネル登録失敗 ${identifier} : ${response.error}` };
+    
+    const body = response.result;
+    const savedChannel = body != null && typeof body === 'object' && 'result' in body ? body.result : null;
+    const parsed = filterRulesSchema.shape.blocked_channels.element.safeParse(savedChannel);
+    if(!parsed.success || (parsed.data.handle == null && parsed.data.channel_id == null) ||
+      (channel.handle != null && channel.handle !== parsed.data.handle) ||
+      (channel.channel_id != null && channel.channel_id !== parsed.data.channel_id)) {
+      return { error: `チャンネル登録の応答形式が不正です ${identifier}・既存の条件を保持します` };
+    }
+    
+    const saved = parsed.data;
+    currentFilterRules.blocked_channels = currentFilterRules.blocked_channels.filter(existing =>
+      (saved.handle == null || existing.handle !== saved.handle) &&
+      (saved.channel_id == null || existing.channel_id !== saved.channel_id)
+    );
+    currentFilterRules.blocked_channels.push(saved);
+    saveFilterRules(currentFilterRules, menu);
+    pageFilter.updateFilterRules(currentFilterRules);
+    menu.log(`チャンネル登録成功 : ${saved.handle ?? '-'} / ${saved.channel_id ?? '-'}・非表示 ${menu.enabledElement.checked ? 'ON' : 'OFF'}`);
+    return { result: identifier };
+  };
+  
   /** カードの非表示・復元と DOM 監視を操作するオブジェクト・この時点ではまだ監視を開始しない */
-  const pageFilter = createPageFilter(menu.enabledElement, menu, registerVideo);
+  const pageFilter = createPageFilter(menu.enabledElement, menu, registerVideo, registerChannel);
   
   /**
    * API から全フィルター条件を取得し、キャッシュとカード判定の条件を更新する

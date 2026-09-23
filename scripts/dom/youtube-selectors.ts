@@ -38,6 +38,10 @@ export const youTubeSelectors = {
   thumbnails: 'ytd-thumbnail, yt-thumbnail-view-model, ytm-thumbnail-cover, .shortsLockupViewModelHostThumbnailContainer, .shortsLockupViewModelHostThumbnailParentContainer',
   /** 専用のサムネイル領域がない場合の配置先・チャンネル画像のリンクは含めない */
   thumbnailLinks: 'a[href*="watch?"]:has(img), a[href*="/shorts/"]:has(img)',  // eslint-disable-line neos-eslint-plugin/comment-colon-spacing
+  /** カード内のチャンネル識別子を取得するリンク */
+  channelLinks: 'a[href*="/@"], a[href*="/channel/"], a[href*="/%40"]',
+  /** 画像リンクに名前がない場合に使うチャンネル名の表示要素 */
+  channelNames: '.ytmBadgeAndBylineRendererItemByline, ytm-channel-name, #channel-name, .ytLockupMetadataViewModelByline',
   /** 参考タイトルを取得する要素・メタ情報を含むカード全体のテキストは使用しない */
   videoTitles: '#video-title, h3, .shortsLockupViewModelHostMetadataTitle',
   /** 非表示判定から除外する要素・カード自身または祖先が一致した場合に除外する */

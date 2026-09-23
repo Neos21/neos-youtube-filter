@@ -1,19 +1,19 @@
-import { getVideoRegistration } from '../dom/get-video-registration';
+import { getChannelRegistration } from '../dom/get-channel-registration';
 
 import type { Logger } from './create-menu';
 import type { Result } from '../../shared/types/utilities/result';
-import type { VideoRegistration } from '../dom/get-video-registration';
+import type { ChannelRegistration } from '../dom/get-channel-registration';
 
 /**
- * ブロック動画登録ボタンをカードごとに配置・解除する操作を作る
+ * ブロックチャンネル登録ボタンをカードごとに配置・解除する操作を作る
  * 
  * カードの探索は行わず、ページフィルターが処理するカードを `update()` で受け取る
- * 登録内容はクリック時に読み直すため、YouTube がカードを別動画に再利用しても古い ID を送信しない
+ * 登録内容はクリック時に読み直すため、YouTube がカードを別チャンネルに再利用しても古い ID を送信しない
  * 
- * @param registerVideo 動画を PUT し、成功時に条件とキャッシュを更新する処理
+ * @param registerChannel チャンネルを PUT し、成功時に条件とキャッシュを更新する処理
  * @param logger ボタン配置・解除・登録失敗を記録するログ機能
  */
-export const createBlockVideoButtons = (registerVideo: (video: VideoRegistration) => Promise<Result<string>>, logger: Logger): {
+export const createBlockChannelButtons = (registerChannel: (channel: ChannelRegistration) => Promise<Result<string>>, logger: Logger): {
   /** 対象カードのボタンを配置・更新する・対象外や削除されたカードのボタンは取り除く */
   update: (cardElement: HTMLElement, isEligible: boolean) => void;
   /** DOM から削除されたカードのボタンを解放する・DOM の削除通知をまとめて受け取った時に呼ぶ */
@@ -22,34 +22,34 @@ export const createBlockVideoButtons = (registerVideo: (video: VideoRegistration
   clear: () => void;
 } => {
   /** カードと配置済みボタンの対応表・重複配置を避け、ページ移動と停止時にまとめて解除する */
-  const blockVideoButtons = new Map<HTMLElement, HTMLButtonElement>();
+  const blockChannelButtons = new Map<HTMLElement, HTMLButtonElement>();
   
   /** 1枚のカードのボタンを取り除き、管理対象から外す */
   const remove = (cardElement: HTMLElement): void => {
-    const buttonElement = blockVideoButtons.get(cardElement);
+    const buttonElement = blockChannelButtons.get(cardElement);
     if(buttonElement == null) return;
     buttonElement.remove();
-    blockVideoButtons.delete(cardElement);
-    logger.log('ブロック動画登録ボタン解除');
+    blockChannelButtons.delete(cardElement);
+    logger.log('ブロックチャンネル登録ボタン解除');
   };
   
   return {
     update: (cardElement: HTMLElement, isEligible: boolean): void => {
-      const registration = isEligible ? getVideoRegistration(cardElement) : null;
+      const registration = isEligible ? getChannelRegistration(cardElement) : null;
       if(registration == null) {
         remove(cardElement);
         return;
       }
       
-      const existingButtonElement = blockVideoButtons.get(cardElement);
+      const existingButtonElement = blockChannelButtons.get(cardElement);
       if(existingButtonElement?.parentElement === registration.thumbnailElement) return;
       remove(cardElement);
       
       /** サムネイルに常時表示する登録ボタン・タッチ端末でもホバーせず操作できる */
       const buttonElement = document.createElement('button');
       buttonElement.type = 'button';
-      buttonElement.dataset.ytfUi = 'video-button';
-      buttonElement.textContent = 'この動画を非表示にする';
+      buttonElement.dataset.ytfUi = 'channel-button';
+      buttonElement.textContent = 'このチャンネルを非表示にする';
       
       // YouTube のサムネイル操作に伝播させず、クリックの既定動作によるリンク遷移も止める
       for(const eventName of ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'mousedown', 'mouseup', 'keydown', 'keyup', 'dblclick']) {
@@ -61,28 +61,28 @@ export const createBlockVideoButtons = (registerVideo: (video: VideoRegistration
         event.stopPropagation();
         if(buttonElement.disabled) return;
         
-        const currentRegistration = getVideoRegistration(cardElement);
+        const currentRegistration = getChannelRegistration(cardElement);
         if(currentRegistration == null) {
-          logger.error('ブロック動画登録中止 : 動画 ID またはサムネイルを取得できません');
+          logger.error('ブロックチャンネル登録中止 : チャンネル識別子またはサムネイルを取得できません');
           remove(cardElement);
           return;
         }
         
         buttonElement.disabled = true;
         buttonElement.textContent = '登録中…';
-        const result = await registerVideo(currentRegistration.video);
+        const result = await registerChannel(currentRegistration.channel);
         if(result.error != null) logger.error(result.error);
         
         // 成功後も OFF 中は表示を維持する・失敗時も同じボタンから再操作できる
         buttonElement.disabled = false;
-        buttonElement.textContent = 'この動画を非表示にする';
+        buttonElement.textContent = 'このチャンネルを非表示にする';
       });
       
-      blockVideoButtons.set(cardElement, buttonElement);
+      blockChannelButtons.set(cardElement, buttonElement);
       registration.thumbnailElement.append(buttonElement);
-      logger.log(`ブロック動画登録ボタン配置 : ${registration.video.video_id}`);
+      logger.log(`ブロックチャンネル登録ボタン配置 : ${registration.channel.handle ?? registration.channel.channel_id}`);
     },
-    removeDisconnected: (): void => blockVideoButtons.forEach((_buttonElement, element) => { if(!element.isConnected) remove(element); }),
-    clear: (): void => blockVideoButtons.forEach((_buttonElement, cardElement) => remove(cardElement))
+    removeDisconnected: (): void => blockChannelButtons.forEach((_buttonElement, element) => { if(!element.isConnected) remove(element); }),
+    clear: (): void => blockChannelButtons.forEach((_buttonElement, cardElement) => remove(cardElement))
   };
 };

@@ -2,9 +2,11 @@ import { createCardMatcher } from './create-card-matcher';
 import { cardProcessingDelayMilliseconds } from '../constants';
 import { getYouTubePage } from '../dom/get-youtube-page';
 import { youTubeSelectors } from '../dom/youtube-selectors';
+import { createBlockChannelButtons } from '../ui/create-block-channel-buttons';
 import { createBlockVideoButtons } from '../ui/create-block-video-buttons';
 
 import type { Result } from '../../shared/types/utilities/result';
+import type { ChannelRegistration } from '../dom/get-channel-registration';
 import type { VideoRegistration } from '../dom/get-video-registration';
 import type { FilterRules } from '../schemas/filter-rules-schema';
 import type { Logger } from '../ui/create-menu';
@@ -19,12 +21,14 @@ import type { Logger } from '../ui/create-menu';
  * @param enabledElement 非表示 ON・OFF のチェックボックス : 現在のチェック状態を判定に使い、ページ移動時は初期値に書き換える
  * @param logger ロガー : 非表示・復元の対象、処理件数、監視開始・停止を出力する
  * @param registerVideo 動画の登録と条件更新を行う処理・ボタン配置と同じカード走査から利用する
+ * @param registerChannel チャンネルの登録と条件更新を行う処理・動画ボタンと同じカード走査から利用する
  * @returns `start` は監視開始、`stop` は監視停止と表示復元、`updateFilterRules` は条件の差し替えと全カードの再判定を行う
  */
 export const createPageFilter = (
   enabledElement: HTMLInputElement,
   logger: Logger,
-  registerVideo: (video: VideoRegistration) => Promise<Result<string>>
+  registerVideo: (video: VideoRegistration) => Promise<Result<string>>,
+  registerChannel: (channel: ChannelRegistration) => Promise<Result<string>>
 ): {
   /** CSS とイベント監視を登録し、現在のページを処理する・起動時に一度呼ぶ */
   start: () => void;
@@ -35,6 +39,8 @@ export const createPageFilter = (
 } => {
   /** カードごとの動画登録ボタン・ページ移動と停止時はまとめて解除する */
   const blockVideoButtons = createBlockVideoButtons(registerVideo, logger);
+  /** カードごとのチャンネル登録ボタン・動画ボタンと同じ処理対象に配置する */
+  const blockChannelButtons = createBlockChannelButtons(registerChannel, logger);
   
   /** 個別の動画カードに該当する要素を探す CSS セレクタ・候補タグを OR 条件で連結したもの */
   const cardSelector = youTubeSelectors.cards.join(', ');
@@ -53,11 +59,11 @@ export const createPageFilter = (
       display: none !important;
     }
     
-    :has(> [data-ytf-ui="video-button"]) {
+    :has(> [data-ytf-ui="video-button"], > [data-ytf-ui="channel-button"]) {
       position: relative !important;
     }
     
-    [data-ytf-ui="video-button"] {
+    [data-ytf-ui="video-button"], [data-ytf-ui="channel-button"] {
       position: absolute;
       top: 4px;
       left: 4px;
@@ -72,7 +78,11 @@ export const createPageFilter = (
       font: 12px sans-serif;
       cursor: pointer;
     }
-    [data-ytf-ui="video-button"]:disabled {
+    :has(> [data-ytf-ui="video-button"]) > [data-ytf-ui="channel-button"] {
+      top: auto;
+      bottom: 4px;
+    }
+    [data-ytf-ui="video-button"]:disabled, [data-ytf-ui="channel-button"]:disabled {
       opacity: .6;
       cursor: wait;
     }
@@ -150,6 +160,7 @@ export const createPageFilter = (
       /** 現在の探索範囲にある個別カードか否か・削除済み要素、広告、棚などは対象外 */
       const isEligible = rootSelectors !== '' && element.isConnected && element.closest(rootSelectors) != null && element.closest(youTubeSelectors.excludes) == null && element.querySelector(youTubeSelectors.containers) == null;
       blockVideoButtons.update(element, isEligible);
+      blockChannelButtons.update(element, isEligible);
       
       // OFF・対象外・条件不一致はすべて `null` とし、以前隠したカードなら復元する
       const reason = enabledElement.checked && isEligible ? matches(element) : null;
@@ -200,6 +211,7 @@ export const createPageFilter = (
     currentPageUrl = url.href;
     
     blockVideoButtons.clear();
+    blockChannelButtons.clear();
     // 非表示にしていた要素を一旦元に戻す
     hiddenElements.forEach((_reason, element) => restoreElement(element));
     pendingElements.clear();
@@ -284,7 +296,10 @@ export const createPageFilter = (
     }
     
     // カードが取り除かれた時はボタンの参照も解放する・自分の UI だけの変更では実行しない
-    if(records.some(record => [...record.removedNodes].some(node => !isOwnNode(node)))) blockVideoButtons.removeDisconnected();
+    if(records.some(record => [...record.removedNodes].some(node => !isOwnNode(node)))) {
+      blockVideoButtons.removeDisconnected();
+      blockChannelButtons.removeDisconnected();
+    }
     if(pendingElements.size > 0) schedule();
   });
   
@@ -317,6 +332,7 @@ export const createPageFilter = (
       observer.disconnect();
       if(timerId != null) clearTimeout(timerId);
       blockVideoButtons.clear();
+      blockChannelButtons.clear();
       pendingElements.clear();
       window.removeEventListener('yt-navigate-finish', onNavigate);
       window.removeEventListener('popstate', onNavigate);

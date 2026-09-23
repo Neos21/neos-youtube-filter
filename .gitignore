@@ -17,5 +17,6 @@ node_modules/
 .wrangler/
 # ビルド済資材
 build/
-# ユニットテストのコードカバレッジ
-coverage/
+
+# SQL ファイル
+migrations/insert-subscribed-channels.sql

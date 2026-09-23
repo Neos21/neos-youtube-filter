@@ -1,3 +1,4 @@
+import { getThumbnailElement } from './get-thumbnail-element';
 import { youTubeSelectors } from './youtube-selectors';
 
 /** 動画登録に使う識別子と参考タイトル・タイトルが取れない場合は省略して既存の保存値を保持する */
@@ -17,7 +18,7 @@ export type VideoRegistration = {
  * @returns 動画情報とサムネイルの要素・動画 ID または配置先が取得できない場合は `null`
  */
 export const getVideoRegistration = (cardElement: HTMLElement): { video: VideoRegistration; thumbnailElement: HTMLElement; } | null => {
-  const thumbnailElement = cardElement.querySelector<HTMLElement>(youTubeSelectors.thumbnails) ?? cardElement.querySelector<HTMLElement>(youTubeSelectors.thumbnailLinks);
+  const thumbnailElement = getThumbnailElement(cardElement);
   if(thumbnailElement == null) return null;
   
   /** 登録対象の動画 ID・通常動画と Shorts のリンクを先に調べる */
@@ -41,5 +42,11 @@ export const getVideoRegistration = (cardElement: HTMLElement): { video: VideoRe
   
   const titleElement = cardElement.querySelector(youTubeSelectors.videoTitles);
   const title = (titleElement?.getAttribute('title') || titleElement?.textContent || '').trim();
-  return { video: { video_id: videoId, ...(title === '' ? {} : { title }) }, thumbnailElement };
+  return {
+    video: {
+      video_id: videoId,
+      ...(title === '' ? {} : { title })
+    },
+    thumbnailElement
+  };
 };
