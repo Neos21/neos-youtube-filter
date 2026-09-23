@@ -65,22 +65,21 @@ export const createPageFilter = (
     
     [data-ytf-ui="video-button"], [data-ytf-ui="channel-button"] {
       position: absolute;
-      top: 4px;
-      left: 4px;
-      z-index: 10;
+      top: .25rem;
+      left: .25rem;
+      z-index: 999999999;
       max-width: calc(100% - 8px);
-      min-height: 32px;
-      padding: 4px 6px;
+      padding: .25rem .5rem;
       border: 1px solid #888;
       border-radius: 4px;
       color: #111;
       background: #fff;
-      font: 12px sans-serif;
+      font-size: .8rem;
       cursor: pointer;
     }
     :has(> [data-ytf-ui="video-button"]) > [data-ytf-ui="channel-button"] {
       top: auto;
-      bottom: 4px;
+      bottom: .25rem;
     }
     [data-ytf-ui="video-button"]:disabled, [data-ytf-ui="channel-button"]:disabled {
       opacity: .6;

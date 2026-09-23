@@ -33,7 +33,8 @@ export const getChannelRegistration = (cardElement: HTMLElement): { channel: Cha
     catch { continue; }
     if(url.hostname !== 'youtube.com' && !url.hostname.endsWith('.youtube.com')) continue;
     
-    const handlePath = url.pathname.match((/^\/(%40|@)([^/]+)\/?$/i));
+    // チャンネル名のリンクが `/@handle/videos` などのタブを指す場合もある
+    const handlePath = url.pathname.match((/^\/(%40|@)([^/]+)(?:\/(?:videos|shorts|streams|playlists|community|about|featured|live))?\/?$/i));
     if(handlePath != null) {
       let decodedHandle: string;
       try { decodedHandle = decodeURIComponent(handlePath[2]); }
@@ -46,7 +47,7 @@ export const getChannelRegistration = (cardElement: HTMLElement): { channel: Cha
       handle = foundHandle;
     }
     else {
-      const foundChannelId = url.pathname.match((/^\/channel\/(UC[A-Za-z0-9_-]{22})\/?$/))?.[1];
+      const foundChannelId = url.pathname.match((/^\/channel\/(UC[A-Za-z0-9_-]{22})(?:\/(?:videos|shorts|streams|playlists|community|about|featured|live))?\/?$/))?.[1];
       if(foundChannelId == null) continue;
       
       if(channelId != null && channelId !== foundChannelId) return null;

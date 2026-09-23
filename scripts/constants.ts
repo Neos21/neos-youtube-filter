@@ -18,3 +18,6 @@ export const maxLogMessages = 200;
 
 /** ログ1件のメッセージ本文と画面通知の最大文字数・日時とレベルの接頭辞は含まない */
 export const maxLogMessageLength = 2000;
+
+/** 本スクリプト自体の最新版が読み込めているか確認できるようにするための適当な文字列 */
+export const versionText = 'Version : 2029-06-23 18 : 04 : 52';

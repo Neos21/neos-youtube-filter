@@ -1,4 +1,4 @@
-import { maxLogMessageLength, maxLogMessages } from '../constants';
+import { maxLogMessageLength, maxLogMessages, versionText } from '../constants';
 
 /** ロガー関数 : API やカード処理にはメニュー要素ではなくこの型で渡す */
 export type Logger = {
@@ -32,12 +32,12 @@ export const createMenu = (): Logger & {
   /* eslint-disable neos-eslint-plugin/comment-colon-spacing */
   menuElement.style.cssText = `
     position: fixed;
-    top: 8px;
-    right: 8px;
-    z-index: 2147483647;
-    max-width: calc(100vw - 28px);
+    top: 0;
+    right: 0;
+    z-index: 999999999;
+    max-width: calc(100vw - 2rem);
     border: 1px solid #888;
-    padding: 6px;
+    padding: .25rem;
     color: #111;
     background: #fff;
   `;
@@ -45,14 +45,15 @@ export const createMenu = (): Logger & {
   /** メニューが閉じていても見える見出し・エラー時には警告の印を付ける */
   const summaryElement = document.createElement('summary');
   summaryElement.textContent = 'YTF';
+  summaryElement.style.cursor = 'pointer';
   
   /** チェックボックスと再取得ボタンを横並びに配置する領域 */
   const actionsElement = document.createElement('div');
   actionsElement.style.cssText = `
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 8px 0;
+    gap: .75rem;
+    padding: .25rem 0;
   `;
   
   /** 直近のエラーメッセージを表示する領域・通常ログはここには出さない */
@@ -65,19 +66,29 @@ export const createMenu = (): Logger & {
   debugLogTextareaElement.readOnly = true;
   debugLogTextareaElement.title = debugLogTextareaElement.placeholder = 'YTF デバッグログ';
   debugLogTextareaElement.style.cssText = `
-    width: min(560px, calc(100vw - 40px));
+    display: block;
+    width: min(560px, calc(100vw - 2rem));
     height: 30vh;
     box-sizing: border-box;
     white-space: pre;
   `;
   
-  menuElement.append(summaryElement, actionsElement, noticeElement, debugLogTextareaElement);
+  /** 本スクリプト自体の最新版が読み込めているか確認できるようにするための適当な文字列 */
+  const versionElement = document.createElement('div');
+  versionElement.textContent = versionText;
+  versionElement.style.cssText = `
+    color: #888;
+    font-size: .8rem;
+  `;
+  
+  menuElement.append(summaryElement, actionsElement, noticeElement, debugLogTextareaElement, versionElement);
   
   /** 操作領域にラベル付きチェックボックスを追加し要素を返す・文字部分のタッチでも切り替えられる */
   const appendCheckbox = (text: string): HTMLInputElement => {
     const labelElement = document.createElement('label');
     const checkboxElement = document.createElement('input');
     checkboxElement.type = 'checkbox';
+    labelElement.style.cursor = 'pointer';
     labelElement.append(checkboxElement, text);
     actionsElement.append(labelElement);
     return checkboxElement;
@@ -90,6 +101,7 @@ export const createMenu = (): Logger & {
   const reloadButtonElement = document.createElement('button');
   reloadButtonElement.type = 'button';
   reloadButtonElement.textContent = '再取得';
+  reloadButtonElement.style.cursor = 'pointer';
   
   actionsElement.append(reloadButtonElement);
   

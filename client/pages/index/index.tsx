@@ -48,12 +48,10 @@ export default function Index(): ReactElement {
   return (
     <main className="px-3 py-4">
       {/* `main` 要素の余白は `admin-layout.tsx` の `Outlet` ラッパーと揃えておく */}
-      <h1>Neo's YouTube Filter</h1>
-      
       <form onSubmit={onSubmit} className="mb-4 flex gap-x-2">
         <input
           type="password" value={password} onChange={onChangePassword} disabled={isSubmitting}
-          className="input w-full flex-1 input-sm" placeholder="Password" autoComplete="current-password"
+          className="input w-full flex-1 input-sm" placeholder="Neo's YouTube Filter" autoComplete="current-password"
         />
         <button type="submit" className="btn shrink-0 btn-sm" disabled={isSubmitting || isEmpty(password)}>Login</button>
       </form>
