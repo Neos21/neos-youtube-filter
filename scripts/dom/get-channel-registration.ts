@@ -1,4 +1,5 @@
 import { getChannelIdentifiersFromData } from './get-channel-identifiers-from-data';
+import { getLockupTitles } from './get-lockup-data';
 import { getThumbnailElement } from './get-thumbnail-element';
 import { youTubeSelectors } from './youtube-selectors';
 
@@ -70,7 +71,7 @@ export const getChannelRegistration = (cardElement: HTMLElement): { channel: Cha
   channelId ??= identifiers?.channel_id;
   if(handle == null && channelId == null) return null;
   
-  title ??= cardElement.querySelector(youTubeSelectors.channelNames)?.textContent?.trim() || undefined;
+  title ??= cardElement.querySelector(youTubeSelectors.channelNames)?.textContent?.trim() || getLockupTitles(cardElement).channelTitle;
   
   return {
     channel: {

@@ -1,3 +1,4 @@
+import { getLockupTitles } from './get-lockup-data';
 import { getThumbnailElement } from './get-thumbnail-element';
 import { youTubeSelectors } from './youtube-selectors';
 
@@ -41,7 +42,7 @@ export const getVideoRegistration = (cardElement: HTMLElement): { video: VideoRe
   if(videoId == null) return null;
   
   const titleElement = cardElement.querySelector(youTubeSelectors.videoTitles);
-  const title = (titleElement?.getAttribute('title') || titleElement?.textContent || '').trim();
+  const title = (titleElement?.getAttribute('title') || titleElement?.textContent || getLockupTitles(cardElement).videoTitle || '').trim();
   return {
     video: {
       video_id: videoId,

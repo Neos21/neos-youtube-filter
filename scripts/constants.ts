@@ -23,4 +23,4 @@ export const maxLogMessages = 200;
 export const maxLogMessageLength = 2000;
 
 /** 本スクリプト自体の最新版が読み込めているか確認できるようにするための適当な文字列 */
-export const versionText = 'Version : 2029-06-23 19:43:33';  // eslint-disable-line neos-eslint-plugin/comment-colon-spacing
+export const versionText = 'Version : 2029-06-23 20:24:17';  // eslint-disable-line neos-eslint-plugin/comment-colon-spacing

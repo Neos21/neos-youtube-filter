@@ -41,9 +41,9 @@ export const youTubeSelectors = {
   /** カード内のチャンネル識別子を取得するリンク */
   channelLinks: 'a[href*="/@"], a[href*="/channel/"], a[href*="/%40"]',
   /** 画像リンクに名前がない場合に使うチャンネル名の表示要素 */
-  channelNames: '.ytmBadgeAndBylineRendererItemByline, ytm-channel-name, #channel-name, .ytLockupMetadataViewModelByline',
+  channelNames: '.ytmBadgeAndBylineRendererItemByline, ytm-channel-name, #channel-name, .ytLockupMetadataViewModelByline, .ytContentMetadataViewModelMetadataRow:first-child .ytContentMetadataViewModelMetadataText',
   /** 参考タイトルを取得する要素・メタ情報を含むカード全体のテキストは使用しない */
-  videoTitles: '#video-title, h3, .shortsLockupViewModelHostMetadataTitle',
+  videoTitles: '#video-title, h3, .ytLockupMetadataViewModelTitle, .shortsLockupViewModelHostMetadataTitle',
   /** 非表示判定から除外する要素・カード自身または祖先が一致した場合に除外する */
   excludes: '[hidden], ytd-ad-slot-renderer, ytm-ad-slot-renderer, ytd-promoted-sparkles-web-renderer, ytd-display-ad-renderer, ytd-playlist-panel-renderer, ytm-playlist-panel-renderer, yt-collection-thumbnail-view-model, ytd-comments, ytm-comment-section-renderer, #movie_player, #player',
   /** 複数動画をまとめた棚・コレクションの要素・これを子孫に含むカード候補は1枚の動画として扱わない */

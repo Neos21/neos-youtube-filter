@@ -1,4 +1,4 @@
-import { youTubeSelectors } from './youtube-selectors';
+import { getLockupData } from './get-lockup-data';
 
 /** YouTube のカード内部データから取得したチャンネル識別子 */
 export type ChannelIdentifiers = {
@@ -19,27 +19,8 @@ export type ChannelIdentifiers = {
  * @returns チャンネル ID またはハンドル・内部データがない、識別子がない、または曖昧な場合は `null`
  */
 export const getChannelIdentifiersFromData = (cardElement: HTMLElement): ChannelIdentifiers | null => {
-  /** YouTube が動画の表示モデルへ付与した内部データ・カードが外枠なら内部のモデルを使う */
-  const lockupElement = cardElement.matches('yt-lockup-view-model') ? cardElement : cardElement.querySelector<HTMLElement>('yt-lockup-view-model');
-  let data: unknown = (lockupElement as HTMLElement & { data?: unknown; } | null)?.data;
-  
-  // PC の関連動画ではカード自身の `data` が識別子を持たず、親の `contents` に各動画の元データがある
-  if(data == null || typeof data !== 'object') {
-    const sectionElement = cardElement.closest<HTMLElement>('ytd-item-section-renderer');
-    const sectionData: unknown = (sectionElement as HTMLElement & { data?: unknown; } | null)?.data;
-    const href = cardElement.querySelector<HTMLAnchorElement>(youTubeSelectors.videoLinks)?.getAttribute('href') ?? '';
-    const videoId = href.match((/[?&]v=([A-Za-z0-9_-]{11})(?:[&#]|$)/))?.[1]
-      ?? href.match((/\/shorts\/([A-Za-z0-9_-]{11})(?:[/?#]|$)/))?.[1];
-    if(videoId != null && sectionData != null && typeof sectionData === 'object' && 'contents' in sectionData && Array.isArray(sectionData.contents)) {
-      const content = sectionData.contents.find((item: unknown): boolean => {
-        if(item == null || typeof item !== 'object' || !('lockupViewModel' in item)) return false;
-        const model = item.lockupViewModel;
-        return model != null && typeof model === 'object' && 'contentId' in model && model.contentId === videoId;
-      });
-      data = content?.lockupViewModel;
-    }
-  }
-  if(data == null || typeof data !== 'object') return null;
+  const data = getLockupData(cardElement);
+  if(data == null) return null;
   
   /** 探索済みオブジェクト・同じ参照を再訪せず循環参照にも対応する */
   const visited = new Set<object>();
