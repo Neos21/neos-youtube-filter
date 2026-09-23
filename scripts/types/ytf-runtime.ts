@@ -14,12 +14,22 @@ export type YtfRuntime = {
   readonly error: string;
   /** 現在の URL に対応する探索対象・対象外ページでは `null` */
   readonly page: YouTubePage | null;
+  /** 現在のページで非表示機能が有効か否か */
+  readonly enabled: boolean;
+  /** 画面上のデバッグログが有効か否か */
+  readonly debug: boolean;
   /** 呼び出し時点の DOM から動画カードを取得する・表示状態は変更しない */
   getCards: () => Array<YouTubeCard>;
   /** API から再取得する・対象ページ遷移時などの呼び出し用 */
   refresh: () => Promise<boolean>;
   /** 登録成功後の条件をメモリとキャッシュへ反映する・取得日時は維持する */
   updateFilterRules: (filterRules: FilterRules) => boolean;
+  /** 対象ページで非表示機能を切り替える・対象外ページでは無効のままにする */
+  setEnabled: (enabled: boolean) => void;
+  /** 画面上のデバッグ表示を切り替え、設定を保存する */
+  setDebug: (enabled: boolean) => void;
+  /** 監視と UI を解除し、本スクリプトが隠したカードを復元する */
+  destroy: () => void;
 };
 
 declare global {

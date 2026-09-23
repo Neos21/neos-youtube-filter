@@ -63,7 +63,7 @@ const readChannel = (element: Element, baseUrl: URL): Pick<YouTubeCard, 'handle'
   return { handle: [...handles][0] ?? null, channelId: [...channelIds][0] ?? null };
 };
 
-/** 個別カードを抽出する・動画 ID 不明、複数動画を含む棚、コレクションは null とする */
+/** 個別カードを抽出する・動画 ID 不明、複数動画を含む棚、コレクションは `null` とする */
 const extractCard = (element: HTMLElement, baseUrl: URL): YouTubeCard | null => {
   if(element.closest(youTubeSelectors.excluded) != null || element.querySelector(youTubeSelectors.containers) != null) return null;
   const thumbnailElement = element.querySelector<HTMLElement>(youTubeSelectors.thumbnails.join(', '));

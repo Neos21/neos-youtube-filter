@@ -34,10 +34,8 @@ export const filterRulesSchema = z.object({
   subscribed_channels: z.array(channelSchema)
 });
 
-/** キャッシュの版・取得日時・取得元・条件を検証する・未対応の版は拒否する */
+/** キャッシュの取得日時と条件を検証する・追加項目は保存対象に含めない */
 export const filterRulesCacheSchema = z.object({
-  version: z.literal(1),
   fetchedAt: z.iso.datetime(),
-  apiUrl: z.string(),
   rules: filterRulesSchema
 });
