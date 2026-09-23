@@ -1,92 +1,15 @@
-# Neo's YouTube Filter
+# Neo's YouTube Filter (YTF)
 
 YouTube の見たくない動画を非表示にする仕組み。
 
 
-## コンセプト
+## 機能概要
 
-- **YouTube の「ホーム画面」、「動画ページの関連動画欄」、「検索結果ページ」から、「非表示にしたい動画」を非表示にする仕組みを作る**
-- D1 データベースに「非表示にしたい動画情報」を持つ
-    - `blocked_videos` テーブル : 動画単位で非表示にする
-        - `https://www.youtube.com/watch?v=XXXXXXXXXXX` の `XXXXXXXXXXX` 部分を `video_id` カラムに保持する
-        - (動画タイトルも `title` カラムに参考情報として保持しておく)
-    - `blocked_channels` テーブル : チャンネル単位で非表示にする
-        - `https://www.youtube.com/@HANDLE` の `@HANDLE` 部分を `handle` カラムに保持する
-        - `https://www.youtube.com/channel/UCXXXXXXXXXXXXXXXXXXXXXX` の `UCXXXXXXXXXXXXXXXXXXXXXX` 部分を `channel_id` カラムに保持する
-        - YouTube の DOM からはいずれかしか検出できないが、両方の紐付けができれば同一レコードに保持する
-        - (チャンネル名も `title` カラムに参考情報として保持しておく)
-    - `blocked_patterns` テーブル : 文字列もしくは正規表現を用意しておき、動画名もしくはチャンネル名にヒットしたら非表示にする
-        - `type` カラム : `string` か `regexp`
-        - `pattern` カラム : 非表示にしたい文字列か正規表現
-        - `flags` カラム : 正規表現の場合、デフォルトでは `iu` を指定するが、それ以外を明示的に指定したい場合にフラグを指定する
-    - `subscribed_channels` テーブル : 購読しているチャンネル情報・`blocked_channels` とは異なる理由で非表示とするため別途保持する
-        - `handle`・`channel_id`・`title` カラムを持つ
-- React Router SPA にて上述の D1 を CRUD できるようにし、「非表示にしたい動画情報」を管理できるようにする
-- Hono で API を定義する・この API は 後述の「メインスクリプト」からもコール可能にする
-- PC の場合 Tampermonkey より、iPhone の場合ブックマークレットより「メインスクリプト `/ytf.js`」を読み込み、このスクリプトが YouTube 上で実際に動画を非表示にする
-    - メインスクリプトから API コールして「非表示にしたい動画情報」を取得し、それと突合して動画を非表示にする
-    - API コールには Bearer トークンを指定するが、ブックマークレットからの呼び出しが容易になるように JWT を発行するのではなく固定文字列による簡易認証とする
-    - API コールして取得した結果は LocalStorage にもキャッシュを持つようにする
-    - `.ytf-hidden { display: none !important; }` といった CSS を注入し、CSS クラス指定で非表示にする (`style` 属性値を直接書き換えない)
-    - 画面右上にチェックボックスを配置し、動画を非表示にするか、非表示を解除するかをトグルできるようにする
-        - 「ホーム画面」「動画ページ」では「非表示にする (チェック状態)」をデフォルトに、「検索結果ページ」では「非表示にしない (チェックを外した状態)」をデフォルトにする
-        - YouTube 内のページ移動は `window.addEventListener('yt-navigate-finish')` で検出可能、ページ移動ごとに `new URL(location.href)` をチェックすれば良さそう
-    - 同じメインスクリプトを重複してロードしないように `window.__YTF__` オブジェクトを生成しチェックする仕組みを作る
-    - 動画サムネイル上に「この動画を非表示にする」「このチャンネルを非表示にする」ボタンを配置し、クリックで API コールして「非表示にする動画情報」を D1 に追加しつつ、画面上も非表示にする
+YouTube の「ホーム画面」、「動画ページの関連動画欄」、「検索結果ページ」から、「非表示にしたい動画」を非表示にする仕組みを提供する。
 
+D1 データベースに「非表示にしたい動画・チャンネル」の情報を持っておき、Hono で公開する API で CRUD できるようにする。この情報は React Router SPA で提供する管理画面からも CRUD 可能。
 
-## 検証済みの内容
-
-`public/_headers` → `build/client/_headers` に以下を記しておくことで、`www.youtube.com` および `m.youtube.com` からのアクセスを許可し、「メインスクリプト」を読み込めるようにした。
-
-```
-/*
-  Access-Control-Allow-Origin: *
-```
-
-`wrangler.jsonc` に以下のように指定することで、`/api` 配下への Fetch リクエストが Workers に到達するようにした。
-
-```json
-{
-  "assets": {
-    "directory": "./build/client",
-    "not_found_handling": "single-page-application",
-    "binding": "ASSETS",
-    "run_worker_first": [
-      "/api/*"
-    ]
-  }
-}
-```
-
-`server/index.ts` の `createHonoServer()` 部分は以下のように定義することで、`/api` 配下へのリクエストが SPA としてフォールバックされず Hono エンドポイントに到達するようにした。
-
-```typescript
-export const app = new Hono<{ Bindings: HonoBindings; }>();
-app.route(apiPath, api);
-export default await createHonoServer({ app });
-```
-
-`server/routes/api/api.ts` に以下を記すことで CORS ヘッダを付与した。
-
-```typescript
-api.use('*', cors({
-  origin: '*',
-  allowMethods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization']
-}));
-```
-
-「メインスクリプト」は `scripts/ytf.ts` を入口に `$ npm run build:ytf` で `build/client/ytf.js` を生成する。`$ npm run build` でもアプリのビルド後に生成する。
-
-現在の起動・トークン設定とブックマークレット・Tampermonkey の呼び出し例は、[メインスクリプトの起動と設定](./docs/features/main-script.md) を参照のこと。
-
-
-## サンプルとしての機能
-
-サンプルコードには `example`・`examples` の命名・記載がある他、隅付き括弧を用いたプレースホルダを記載している。以下は最終的に実コードから削除して良い。
-
-- `server/repositories/examples-repository.txt`
+PC の場合は Tampermonkey より、iPhone の場合はブックマークレットより「メインスクリプト `ytf.js`」を読み込み、このスクリプトが YouTube 上で実際に動画を非表示にする。また、表示されている動画やチャンネルについて非表示設定に追加するボタン等も提供する。
 
 
 ## 技術スタック
@@ -104,30 +27,92 @@ api.use('*', cors({
 - Linter・Formatter : ESLint
     - セットアップで用いるため `globals` パッケージを導入している
     - 動作のために `jiti` パッケージが必要なため `package.json` に記載アリ
+- メインスクリプト部分のビルドツール : esbuild
 
 
 ## 開発の開始
 
 ```bash
+# 初期インストール
 $ npm install
 # `.dev.vars.example` を参考に `.dev.vars` を用意する
+
+# 開発サーバを起動する
 $ npm run dev
+
+# Lint を実行する
+$ npm run lint
+
+# ビルドする
+$ npm run build
+
+# メインスクリプトだけを型チェック・Bundle・Minify する
+$ npm run build:ytf
+
+# ビルド後にプレビューサーバを起動する
+$ npm run preview
 ```
 
-開発手順、検証コマンド、D1・デプロイ操作は [CONTRIBUTING.md](./CONTRIBUTING.md) を参照のこと。
+`$ npm run build:ytf` は `scripts/ytf.ts` を入口に、`build/client/ytf.js` を単一の IIFE として生成する。アプリの型生成や Vite ビルド、環境変数ファイルは不要。構文変換の対象は現状の最新版とし、ブラウザ API の Polyfill は追加しない。
+
+### Cloudflare Workers へのデプロイ
+
+本番デプロイは開発者が手動で行う。AI エージェントは実行しない。
+
+```bash
+$ npm run deploy
+```
+
+### D1 データベース操作
+
+D1 の作成、SQL 実行、マイグレーションは開発者が手動で行う。AI エージェントはローカル・本番のどちらに対しても実行してはならない。
+
+```bash
+# D1 データベースを作成する
+$ wrangler d1 create ytf
+
+# テーブルを確認するコマンド例
+$ wrangler d1 execute ytf --local  --command='SELECT * FROM 【テーブル名】'
+$ wrangler d1 execute ytf --remote --command='SELECT * FROM 【テーブル名】'
+
+# 任意の SQL ファイルを実行するコマンド例
+$ wrangler d1 execute ytf --local  --file='./【任意の SQL ファイル】.sql'
+$ wrangler d1 execute ytf --remote --file='./【任意の SQL ファイル】.sql'
+
+# マイグレーション用 SQL を実行するコマンド例
+$ wrangler d1 execute ytf --local  --file='./migrations/create-tables.sql'
+$ wrangler d1 execute ytf --local  --file='./migrations/drop-tables.sql'
+$ wrangler d1 execute ytf --remote --file='./migrations/create-tables.sql'
+$ wrangler d1 execute ytf --remote --file='./migrations/drop-tables.sql'
+
+# テーブル・インデックス一覧を出力するコマンド例
+$ wrangler d1 execute ytf --local  --command='SELECT * FROM sqlite_master WHERE type = '\''table'\'''
+$ wrangler d1 execute ytf --local  --command='SELECT * FROM sqlite_master WHERE type = '\''index'\'''
+$ wrangler d1 execute ytf --remote --command='SELECT * FROM sqlite_master WHERE type = '\''table'\'''
+$ wrangler d1 execute ytf --remote --command='SELECT * FROM sqlite_master WHERE type = '\''index'\'''
+
+# リモートのデータをバックアップとして取得するコマンド例
+$ wrangler d1 execute ytf --remote --command='SELECT * FROM 【テーブル名】' --json | jq --compact-output '.[].results[]' > ./migrations/backup.jsonl
+```
+
+### シークレット管理
+
+- ローカル開発時は Git 管理対象外の `.dev.vars` が自動的に参照される
+- Binding の型は `server/types/hono-bindings.ts` に定義する
+- 本番シークレットの登録は開発者が手動で行い、AI エージェントは実行しない
+
+```bash
+$ echo 'EXAMPLE_VALUE' | wrangler secret put API_TOKEN --name ytf
+```
 
 
 ## ドキュメント
 
-| ファイル                                               | 役割                                                     |
-|--------------------------------------------------------|----------------------------------------------------------|
-| [ARCHITECTURE.md](./ARCHITECTURE.md)                   | システム構成、ディレクトリ・レイヤーの責務、データフロー |
-| [CONTRIBUTING.md](./CONTRIBUTING.md)                   | 開発手順、検証、開発者が手動で行う運用操作               |
-| [docs/README.md](./docs/README.md)                     | 詳細ドキュメントの配置方針と索引                         |
-| [docs/features/README.md](./docs/features/README.md)   | 機能別仕様の索引                                         |
-| [docs/decisions/README.md](./docs/decisions/README.md) | 重要な設計判断とその理由 (ADR)                           |
-| [AGENTS.md](./AGENTS.md)                               | AI エージェントが常に守るルールと詳細ルールへの入口      |
-| [TASKS.md](./TASKS.md)                                 | 実行順が必要な未完了タスク                               |
+| ファイル                           | 役割                                                |
+|------------------------------------|-----------------------------------------------------|
+| [docs/README.md](./docs/README.md) | 詳細ドキュメントの配置方針と索引                    |
+| [AGENTS.md](./AGENTS.md)           | AI エージェントが常に守るルールと詳細ルールへの入口 |
+| [TASKS.md](./TASKS.md)             | 実行順が必要な未完了タスク                          |
 
 同じ説明を複数ファイルに重複させず、詳細を所有する文書にリンクする。実装固有の処理順や実装意図の説明などは、対象ソースコードのドキュメンテーションコメントを正とする。
 

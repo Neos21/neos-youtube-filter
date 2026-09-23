@@ -11,7 +11,11 @@ import type { VideoRegistration } from './dom/get-video-registration';
 import type { FilterRules } from './schemas/filter-rules-schema';
 import type { Result } from '../shared/types/utilities/result';
 
-/** メインスクリプトの起動処理・トークンと条件を読み込み、操作メニューを配置してカード監視を開始する */
+/**
+ * ブックマークレット・Tampermonkey より読み込まれるメインスクリプトのエントリポイント
+ * 
+ * メインスクリプトの起動処理・トークンと条件を読み込み、操作メニューを配置してカード監視を開始する
+ */
 (async (): Promise<void> => {
   // 対象サイトと重複起動を確認する・停止後も再読み込みまでは起動し直さない
   if(!location.hostname.includes('youtube.com') || window.top !== window.self || window.__YTF__ != null) return;
