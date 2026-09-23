@@ -40,13 +40,3 @@ api.route(blockedChannelsPath   , blockedChannels);
 api.route(blockedPatternsPath   , blockedPatterns);
 api.route(subscribedChannelsPath, subscribedChannels);
 api.route(filterRulesPath       , filterRules);
-
-// TODO : テスト用・後で消す
-api.get('/test', context => {
-  return context.json({ result: 'TEST GET OK' });
-});
-
-// TODO : テスト用・後で消す
-api.post('/test', context => {
-  return context.json({ result: 'TEST POST OK' });
-});

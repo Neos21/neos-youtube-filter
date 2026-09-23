@@ -1,90 +1,92 @@
-import { extractYouTubeCards } from './dom/extract-youtube-cards';
-import { getYouTubePage } from './dom/get-youtube-page';
+import { tokenStorageKey } from './constants';
 import { createPageFilter } from './filter/create-page-filter';
-import { readStorage, writeStorage } from './helpers/storage';
-import { createFilterRulesStore } from './state/create-filter-rules-store';
-import { createFilterControls } from './ui/create-filter-controls';
-import { createLogger } from './ui/create-logger';
+import { readFilterRules, saveFilterRules } from './helpers/filter-rules';
+import { createApiClient } from './helpers/request-api';
+import { readStorage, removeStorage, writeStorage } from './helpers/storage';
+import { apiFilterRulesSchema } from './schemas/filter-rules-schema';
+import { createMenu } from './ui/create-menu';
 
-import type { YouTubeCard } from './types/youtube-card';
-import type { YtfRuntime } from './types/ytf-runtime';
-import type { FilterRules } from '../shared/types/app/filter-rules';
-
-((): void => {
-  // 本スクリプト起動中なら何もしない・失敗やキャンセル後は既存の入口で再試行する
-  if(window.__YTF__ != null) {
-    if(!['starting', 'ready'].includes(window.__YTF__.status)) void window.__YTF__.refresh();
-    return;
+/** メインスクリプトの起動処理・トークンと条件を読み込み、操作メニューを配置してカード監視を開始する */
+(async (): Promise<void> => {
+  // 対象サイトと重複起動を確認する・停止後も再読み込みまでは起動し直さない
+  if(!location.hostname.includes('youtube.com') || window.top !== window.self || window.__YTF__ != null) return;
+  // 重複起動を回避するフラグを立てる
+  window.__YTF__ = true;
+  // ページ読み込みまで待機する
+  if(document.readyState === 'loading') await new Promise<void>(resolve => document.addEventListener('DOMContentLoaded', () => resolve(), { once: true }));
+  
+  /** 操作メニューとログ機能・画面に配置する前から起動中のログを保持できる */
+  const menu = createMenu();
+  menu.log('起動・トークン読込');
+  
+  // トークンを LocalStorage から取得する・取得できなければ入力を求める
+  const storedTokenResult = readStorage(tokenStorageKey);
+  if(storedTokenResult.error != null) menu.error(storedTokenResult.error);
+  /** 今回の起動中に API 呼び出しで共通利用するトークン・入力キャンセルや空入力なら起動を終了する */
+  const token = (storedTokenResult.result?.trim() || window.prompt('Neo\'s YouTube Filter のトークンを入力してください') || '').trim();
+  if(token === '') return menu.log('入力キャンセル・終了');
+  // トークンを保存し直す
+  const savedTokenResult = writeStorage(tokenStorageKey, token);
+  if(savedTokenResult.error != null) menu.error(savedTokenResult.error);
+  
+  /** カードの非表示・復元と DOM 監視を操作するオブジェクト・この時点ではまだ監視を開始しない */
+  const pageFilter = createPageFilter(menu.enabledElement, menu);
+  
+  /** 認証失敗により終了したか否か・初回の監視開始を防ぎ、再取得ボタンを無効のままにする */
+  let isStopped = false;
+  
+  /** API 呼び出し関数を作る・認証失敗時の終了処理もここで登録する */
+  const requestApi = createApiClient(token, menu, (): void => {
+    // `401` を受けた後は入力を求め直さず停止し、次のページ読込で再入力できるよう保存トークンを消す
+    isStopped = true;
+    pageFilter.stop();
+    menu.reloadButtonElement.disabled = true;
+    const removedResult = removeStorage(tokenStorageKey);
+    if(removedResult.error != null) menu.error(removedResult.error);
+  });
+  
+  /**
+   * API から全フィルター条件を取得し、キャッシュとカード判定の条件を更新する
+   * 
+   * 起動時にキャッシュが使えない場合と、利用者が再取得ボタンを押した場合に呼ぶ
+   * 取得した JSON を判定用形式に変換してから保存・反映するため、通信や形式確認の失敗では既存条件を維持する
+   * 呼び出し中は再取得ボタンを無効にし、認証失敗でなければ終了後に再び有効にする
+   */
+  const reloadFilterRules = async (): Promise<void> => {
+    menu.reloadButtonElement.disabled = true;
+    menu.clearError();
+    
+    const response = await requestApi('/filter-rules');
+    if(response.error != null) {
+      menu.error(response.error);
+    }
+    else {
+      const body = response.result;
+      const parsed = apiFilterRulesSchema.safeParse(body != null && typeof body === 'object' && 'result' in body ? body.result : null);
+      if(!parsed.success) {
+        menu.error(`API 応答形式が不正です・既存の条件を保持します : ${parsed.error.issues.map(issue => issue.path.join('.')).join(', ')}`);
+      }
+      else {
+        saveFilterRules(parsed.data, menu);
+        pageFilter.updateFilterRules(parsed.data);
+        menu.log(`条件取得 : 動画 ${parsed.data.blocked_videos.length}・チャンネル ${parsed.data.blocked_channels.length}・パターン ${parsed.data.blocked_patterns.length}・購読 ${parsed.data.subscribed_channels.length}`);
+      }
+    }
+    
+    menu.reloadButtonElement.disabled = isStopped;  // `requestApi()` での 401 時も考慮して `isStopped` を使用する
+  };
+  
+  /** 保存済みの判定用条件・このキャッシュがあれば API を呼ばずに利用する・`null` は利用できるキャッシュがないことを表す */
+  const cachedFilterRules = readFilterRules(menu);
+  if(cachedFilterRules != null) {
+    pageFilter.updateFilterRules(cachedFilterRules);
   }
-  // YouTube 上で実行されていない場合は何もしない
-  if(!['www.youtube.com', 'm.youtube.com'].includes(location.hostname)) return;
-  // フレーム内のページでないことを確認する
-  if(window.top !== window.self) return;
+  else {
+    await reloadFilterRules();
+  }
   
-  /** API のベース URL */
-  const apiUrl = 'https://ytf.neos21.workers.dev/api';
-  /** デバッグ表示の保存キー・トークンやキャッシュとは独立して保持する */
-  const debugStorageKey = 'ytf:debug';
-  /** DOM の準備待ちも初期化中として扱い、重複評価による先行リクエストを防ぐ */
-  let initialized = false;
-  const logger = createLogger();
-  const filterRulesStore = createFilterRulesStore(apiUrl, logger, (filterRules: FilterRules): void => pageFilter.updateFilterRules(filterRules));
-  const pageFilter = createPageFilter(logger, (): void => { void filterRulesStore.refresh(); }, (): void => renderControls());
-  const controls = createFilterControls(
-    (enabled: boolean): void => pageFilter.setEnabled(enabled),
-    (enabled: boolean): void => setDebug(enabled),
-    (): void => { void filterRulesStore.refresh(); }
-  );
-  
-  /** 状態の所有者から操作欄に反映する・操作欄自体には別の状態を持たせない */
-  const renderControls = (): void => controls.render(pageFilter.enabled, logger.debug, getYouTubePage(new URL(location.href)) != null);
-  
-  /** 保存できない場合も現在のページではデバッグ表示を切り替える */
-  const setDebug = (enabled: boolean): void => {
-    logger.setDebug(enabled);
-    const stored = writeStorage(debugStorageKey, String(enabled));
-    if(stored.error != null) logger.error(stored.error);
-    renderControls();
-  };
-  
-  /** 監視・UI を解除し、再評価で初期化し直せる状態にする */
-  const destroy = (): void => {
-    document.removeEventListener('DOMContentLoaded', start);
-    pageFilter.destroy();
-    controls.destroy();
-    logger.log('監視と UI を解除');
-    logger.destroy();
-    delete window.__YTF__;
-  };
-  
-  /** DOM の準備後に画面を用意し、キャッシュを反映してから API を呼び出す */
-  const start = (): void => {
-    initialized = true;
-    const stored = readStorage(debugStorageKey);
-    if(stored.error != null) logger.error(stored.error);
-    logger.setDebug(stored.result === 'true');
-    logger.log('起動');
-    pageFilter.start();
-    filterRulesStore.restoreCache();
-    void filterRulesStore.refresh();
-  };
-  
-  // 入力や通信を始める前に状態を公開し、初期化中の重複評価も防ぐ
-  window.__YTF__ = {
-    get status(): YtfRuntime['status'] { return initialized ? filterRulesStore.status : 'starting'; },
-    get filterRules(): FilterRules | null { return filterRulesStore.filterRules; },
-    get fetchedAt(): string | null { return filterRulesStore.fetchedAt; },
-    get error(): string { return filterRulesStore.error; },
-    get page(): YtfRuntime['page'] { return getYouTubePage(new URL(location.href)); },
-    get enabled(): boolean { return pageFilter.enabled; },
-    get debug(): boolean { return logger.debug; },
-    getCards: (): Array<YouTubeCard> => extractYouTubeCards(document, new URL(location.href)),
-    refresh: filterRulesStore.refresh,
-    updateFilterRules: filterRulesStore.updateFilterRules,
-    setEnabled: pageFilter.setEnabled,
-    setDebug,
-    destroy
-  };
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
-  else start();
+  // 条件の読込後に操作メニューを配置し、カードの処理と監視を開始する
+  document.body.append(menu.menuElement);
+  menu.reloadButtonElement.addEventListener('click', (): void => { reloadFilterRules(); });
+  if(!isStopped) pageFilter.start();
 })();
