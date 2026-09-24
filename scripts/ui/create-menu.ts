@@ -45,11 +45,11 @@ export const createMenu = (): Logger & {
   
   /** メニューが閉じていても見える見出し・エラー時には警告の印を付ける */
   const summaryElement = document.createElement('summary');
-  summaryElement.textContent = 'YTF';
-  summaryElement.style.cssText = `
-    font-weight: bold;
-    cursor: pointer;
-  `;
+  summaryElement.style.cursor = 'pointer';
+  
+  const summaryTitleElement = document.createElement('span');
+  summaryTitleElement.textContent = 'YTF';
+  summaryTitleElement.style.fontWeight = 'bold';
   
   /** チェックボックスと再取得ボタンを横並びに配置する領域 */
   const actionsElement = document.createElement('div');
@@ -60,7 +60,8 @@ export const createMenu = (): Logger & {
     gap: .75rem;
     padding: .25rem 0;
   `;
-  summaryElement.append(actionsElement);
+  
+  summaryElement.append(summaryTitleElement, actionsElement);
   
   /** 直近のエラーメッセージを表示する領域・通常ログはここには出さない */
   const noticeElement = document.createElement('div');
@@ -144,7 +145,7 @@ export const createMenu = (): Logger & {
     if(debugLogMessages.length > maxLogMessages) debugLogMessages.shift();
     if(level === 'error') {
       noticeElement.textContent = message.slice(0, maxLogMessageLength);
-      summaryElement.textContent = 'YTF !';
+      summaryTitleElement.textContent = 'YTF !';
     }
     renderLog();
   };
@@ -159,7 +160,7 @@ export const createMenu = (): Logger & {
     error: (message: string): void => outputLog('error', message),
     clearError: (): void => {
       noticeElement.textContent = '';
-      summaryElement.textContent = 'YTF';
+      summaryTitleElement.textContent = 'YTF';
     }
   };
 };
