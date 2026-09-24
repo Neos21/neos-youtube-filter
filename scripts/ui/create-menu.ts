@@ -71,8 +71,8 @@ export const createMenu = (): Logger & {
   debugLogTextareaElement.title = debugLogTextareaElement.placeholder = 'YTF デバッグログ';
   debugLogTextareaElement.style.cssText = `
     display: block;
-    width: min(560px, calc(100vw - 2rem));
-    height: 30vh;
+    width: min(360px, calc(100vw - 2rem));
+    height: 15vh;
     box-sizing: border-box;
     white-space: pre;
   `;
