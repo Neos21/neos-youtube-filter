@@ -99,7 +99,7 @@ export const createMenu = (): Logger & {
     const labelElement = document.createElement('label');
     const checkboxElement = document.createElement('input');
     checkboxElement.type = 'checkbox';
-    labelElement.style.cursor = 'pointer';
+    labelElement.style.cursor = checkboxElement.style.cursor = 'pointer';
     labelElement.append(checkboxElement, text);
     actionsElement.append(labelElement);
     return checkboxElement;
