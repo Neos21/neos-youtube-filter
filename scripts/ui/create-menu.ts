@@ -56,9 +56,11 @@ export const createMenu = (): Logger & {
   actionsElement.style.cssText = `
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: .75rem;
     padding: .25rem 0;
   `;
+  summaryElement.append(actionsElement);
   
   /** 直近のエラーメッセージを表示する領域・通常ログはここには出さない */
   const noticeElement = document.createElement('div');
@@ -71,8 +73,8 @@ export const createMenu = (): Logger & {
   debugLogTextareaElement.title = debugLogTextareaElement.placeholder = 'YTF デバッグログ';
   debugLogTextareaElement.style.cssText = `
     display: block;
-    width: min(360px, calc(100vw - 2rem));
-    height: 15vh;
+    width: min(300px, calc(100vw - 2rem));
+    height: 10vh;
     box-sizing: border-box;
     white-space: pre;
   `;
@@ -89,7 +91,7 @@ export const createMenu = (): Logger & {
     text-decoration: none;
   `;
   
-  menuElement.append(summaryElement, actionsElement, noticeElement, debugLogTextareaElement, versionElement);
+  menuElement.append(summaryElement, noticeElement, debugLogTextareaElement, versionElement);
   
   /** 操作領域にラベル付きチェックボックスを追加し要素を返す・文字部分のタッチでも切り替えられる */
   const appendCheckbox = (text: string): HTMLInputElement => {
