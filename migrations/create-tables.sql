@@ -13,6 +13,7 @@ CREATE TABLE blocked_channels (  -- チャンネル単位で非表示にする :
   channel_id  TEXT     UNIQUE       CHECK (channel_id IS NULL OR length(trim(channel_id)) > 0),  -- チャンネル ID (`UC` から始まる文字列)
   title       TEXT,                                                                              -- 参考用チャンネル名
   created_at  TEXT     NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  
   CHECK (handle IS NOT NULL OR channel_id IS NOT NULL)
 );
 
@@ -22,6 +23,7 @@ CREATE TABLE blocked_patterns (  -- 文字列か正規表現で非表示にす�
   pattern     TEXT     NOT NULL     CHECK (length(pattern) > 0),           -- パターン
   flags       TEXT     NOT NULL     DEFAULT 'iu',                          -- 正規表現の場合のフラグ : 文字列型の登録では明示的に空文字を指定し、正規表現のフラグなしも空文字で表す
   created_at  TEXT     NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  
   CHECK (type = 'regexp' OR flags = '')
 );
 
@@ -31,5 +33,8 @@ CREATE TABLE subscribed_channels (  -- 購読済チャンネル : ブロック�
   channel_id  TEXT     UNIQUE       CHECK (channel_id IS NULL OR length(trim(channel_id)) > 0),  -- チャンネル ID
   title       TEXT,                                                                              -- 参考用チャンネル名
   created_at  TEXT     NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  
   CHECK (handle IS NOT NULL OR channel_id IS NOT NULL)
 );
+
+CREATE INDEX index_subscribed_channels_title ON subscribed_channels(title);  -- 重複登録回避のために `title` カラムを参照する際のスキャン行数削減のため
