@@ -1,9 +1,10 @@
 /* TailwindCSS を使用する */
-@import "tailwindcss";
+@import "tailwindcss" source("./");
 
 /* daisyUI を使用する */
 @plugin "daisyui" {
   themes: light --default;  /* ライトテーマのみにする */
+  include: properties, scrollbar, rootcolor, rootscrolllock, rootscrollgutter, svg, alert, button, drawer, fieldset, input, loading, menu, modal, navbar, select, table, textarea;
 }
 
 :root {
